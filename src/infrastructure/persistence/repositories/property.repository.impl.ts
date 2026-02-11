@@ -55,10 +55,9 @@ export class DrizzlePropertyRepository implements PropertyRepository {
         shortDescription: propertyData.shortDescription || null,
         privateNotes: propertyData.privateNotes || null,
 
-        country: propertyData.country || null,
-        state: propertyData.state || null,
-        city: propertyData.city || null,
-        neighborhood: propertyData.neighborhood || null,
+        countryId: propertyData.countryId || null,
+        cityId: propertyData.cityId || null,
+        neighborhoodId: propertyData.neighborhoodId || null,
         address: propertyData.address || null,
         streetNumber: propertyData.streetNumber || null,
         floor: propertyData.floor || null,
@@ -187,16 +186,14 @@ export class DrizzlePropertyRepository implements PropertyRepository {
         lte(properties.price, String(options.maxPrice)),
       );
     }
-    if (options.city) {
-      conditions.push(ilike(properties.city, `%${options.city}%`));
+    if (options.countryId) {
+      conditions.push(eq(properties.countryId, options.countryId));
     }
-    if (options.state) {
-      conditions.push(ilike(properties.state, `%${options.state}%`));
+    if (options.cityId) {
+      conditions.push(eq(properties.cityId, options.cityId));
     }
-    if (options.neighborhood) {
-      conditions.push(
-        ilike(properties.neighborhood, `%${options.neighborhood}%`),
-      );
+    if (options.neighborhoodId) {
+      conditions.push(eq(properties.neighborhoodId, options.neighborhoodId));
     }
     if (options.bedrooms !== undefined) {
       conditions.push(gte(properties.bedrooms, options.bedrooms));
@@ -226,8 +223,6 @@ export class DrizzlePropertyRepository implements PropertyRepository {
           ilike(properties.title, `%${options.search}%`),
           ilike(properties.description, `%${options.search}%`),
           ilike(properties.address, `%${options.search}%`),
-          ilike(properties.city, `%${options.search}%`),
-          ilike(properties.neighborhood, `%${options.search}%`),
         ),
       );
     }
@@ -321,12 +316,12 @@ export class DrizzlePropertyRepository implements PropertyRepository {
       updateData.privateNotes = propertyData.privateNotes;
 
     // Location
-    if (propertyData.country !== undefined)
-      updateData.country = propertyData.country;
-    if (propertyData.state !== undefined) updateData.state = propertyData.state;
-    if (propertyData.city !== undefined) updateData.city = propertyData.city;
-    if (propertyData.neighborhood !== undefined)
-      updateData.neighborhood = propertyData.neighborhood;
+    if (propertyData.countryId !== undefined)
+      updateData.countryId = propertyData.countryId;
+    if (propertyData.cityId !== undefined)
+      updateData.cityId = propertyData.cityId;
+    if (propertyData.neighborhoodId !== undefined)
+      updateData.neighborhoodId = propertyData.neighborhoodId;
     if (propertyData.address !== undefined)
       updateData.address = propertyData.address;
     if (propertyData.streetNumber !== undefined)

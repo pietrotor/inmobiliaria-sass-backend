@@ -12,9 +12,9 @@ export interface FindAllPropertiesOptions {
   currency?: string;
   minPrice?: number;
   maxPrice?: number;
-  city?: string;
-  state?: string;
-  neighborhood?: string;
+  countryId?: string;
+  cityId?: string;
+  neighborhoodId?: string;
   bedrooms?: number;
   bathrooms?: number;
   minTotalArea?: number;

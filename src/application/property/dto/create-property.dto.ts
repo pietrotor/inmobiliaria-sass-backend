@@ -12,12 +12,42 @@ import {
   Min,
   Max,
   MaxLength,
+  ValidateNested,
+  ArrayMinSize,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { PropertyType } from '@domain/property/value-objects/property-type.vo';
 import { TransactionType } from '@domain/property/value-objects/transaction-type.vo';
 import { Currency } from '@domain/property/value-objects/currency.vo';
 import { PropertyCondition } from '@domain/property/value-objects/property-condition.vo';
+
+export class PropertyPriceDto {
+  @ApiProperty({
+    description: 'Currency for this price',
+    enum: Currency,
+    example: Currency.USD,
+  })
+  @IsEnum(Currency)
+  currency: Currency;
+
+  @ApiProperty({
+    description: 'Price amount',
+    example: 150000,
+  })
+  @IsNumber()
+  @Min(0)
+  @Type(() => Number)
+  price: number;
+
+  @ApiPropertyOptional({
+    description: 'Mark as the main/primary price (used for sorting/filtering)',
+    example: true,
+    default: false,
+  })
+  @IsBoolean()
+  @IsOptional()
+  isMain?: boolean;
+}
 
 export class CreatePropertyDto {
   // ── Basic info ──────────────────────────────────────────────────────
@@ -56,27 +86,25 @@ export class CreatePropertyDto {
   @MaxLength(100)
   internalCode?: string;
 
-  // ── Pricing ─────────────────────────────────────────────────────────
+  // ── Pricing (multi-currency) ─────────────────────────────────────────
 
   @ApiProperty({
-    description: 'Currency',
-    enum: Currency,
-    example: Currency.USD,
+    description:
+      'Property prices in multiple currencies. At least one must be marked as isMain (or the first one will be used).',
+    type: [PropertyPriceDto],
+    example: [
+      { currency: 'USD', price: 150000, isMain: true },
+      { currency: 'VES', price: 5400000 },
+    ],
   })
-  @IsEnum(Currency)
-  currency: Currency;
-
-  @ApiProperty({
-    description: 'Property price',
-    example: 150000,
-  })
-  @IsNumber()
-  @Min(0)
-  @Type(() => Number)
-  price: number;
+  @IsArray()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @Type(() => PropertyPriceDto)
+  prices: PropertyPriceDto[];
 
   @ApiPropertyOptional({
-    description: 'Previous price (for showing discount)',
+    description: 'Previous price of the main currency (for showing discount)',
     example: 170000,
   })
   @IsNumber()
@@ -124,37 +152,35 @@ export class CreatePropertyDto {
   @IsOptional()
   privateNotes?: string;
 
-  // ── Location ────────────────────────────────────────────────────────
-
-  @ApiPropertyOptional({ description: 'Country', example: 'Argentina' })
-  @IsString()
-  @IsOptional()
-  country?: string;
+  // ── Location (FK references) ─────────────────────────────────────────
 
   @ApiPropertyOptional({
-    description: 'State / province',
-    example: 'Buenos Aires',
+    description: 'Country ID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
-  @IsString()
+  @IsUUID()
   @IsOptional()
-  state?: string;
-
-  @ApiPropertyOptional({ description: 'City', example: 'CABA' })
-  @IsString()
-  @IsOptional()
-  city?: string;
+  countryId?: string;
 
   @ApiPropertyOptional({
-    description: 'Neighborhood / zone',
-    example: 'Palermo',
+    description: 'City ID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
-  @IsString()
+  @IsUUID()
   @IsOptional()
-  neighborhood?: string;
+  cityId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Neighborhood ID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @IsUUID()
+  @IsOptional()
+  neighborhoodId?: string;
 
   @ApiPropertyOptional({
     description: 'Street address',
-    example: 'Av. Santa Fe',
+    example: 'Av. Principal de Las Mercedes',
   })
   @IsString()
   @IsOptional()
@@ -175,18 +201,18 @@ export class CreatePropertyDto {
   @IsOptional()
   apartment?: string;
 
-  @ApiPropertyOptional({ description: 'ZIP / postal code', example: 'C1425' })
+  @ApiPropertyOptional({ description: 'ZIP / postal code', example: '1060' })
   @IsString()
   @IsOptional()
   zipCode?: string;
 
-  @ApiPropertyOptional({ description: 'Latitude', example: -34.5875 })
+  @ApiPropertyOptional({ description: 'Latitude', example: 10.4806 })
   @IsNumber()
   @IsOptional()
   @Type(() => Number)
   latitude?: number;
 
-  @ApiPropertyOptional({ description: 'Longitude', example: -58.4096 })
+  @ApiPropertyOptional({ description: 'Longitude', example: -66.8541 })
   @IsNumber()
   @IsOptional()
   @Type(() => Number)
@@ -461,7 +487,7 @@ export class CreatePropertyDto {
 
   @ApiPropertyOptional({
     description: 'Contact phone',
-    example: '+5491155554444',
+    example: '+584241234567',
   })
   @IsString()
   @IsOptional()
@@ -477,7 +503,7 @@ export class CreatePropertyDto {
 
   @ApiPropertyOptional({
     description: 'Contact WhatsApp number',
-    example: '+5491155554444',
+    example: '+584241234567',
   })
   @IsString()
   @IsOptional()

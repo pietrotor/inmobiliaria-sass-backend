@@ -20,7 +20,7 @@ export class PropertyMapper {
       status: schema.status as PropertyStatus,
       internalCode: schema.internalCode || undefined,
 
-      // Pricing
+      // Main price
       currency: schema.currency as Currency,
       price: Number(schema.price),
       previousPrice: schema.previousPrice
@@ -38,11 +38,10 @@ export class PropertyMapper {
       shortDescription: schema.shortDescription || undefined,
       privateNotes: schema.privateNotes || undefined,
 
-      // Location
-      country: schema.country || undefined,
-      state: schema.state || undefined,
-      city: schema.city || undefined,
-      neighborhood: schema.neighborhood || undefined,
+      // Location (FK references)
+      countryId: schema.countryId || undefined,
+      cityId: schema.cityId || undefined,
+      neighborhoodId: schema.neighborhoodId || undefined,
       address: schema.address || undefined,
       streetNumber: schema.streetNumber || undefined,
       floor: schema.floor || undefined,
@@ -145,10 +144,9 @@ export class PropertyMapper {
       shortDescription: domain.shortDescription || null,
       privateNotes: domain.privateNotes || null,
 
-      country: domain.country || null,
-      state: domain.state || null,
-      city: domain.city || null,
-      neighborhood: domain.neighborhood || null,
+      countryId: domain.countryId || null,
+      cityId: domain.cityId || null,
+      neighborhoodId: domain.neighborhoodId || null,
       address: domain.address || null,
       streetNumber: domain.streetNumber || null,
       floor: domain.floor || null,

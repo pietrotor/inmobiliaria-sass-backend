@@ -16,10 +16,12 @@ import { DeletePropertyImageUseCase } from '@application/property/use-cases/dele
 import { DrizzleModule } from '@infrastructure/persistence/drizzle/drizzle.module';
 import { DrizzlePropertyRepository } from '@infrastructure/persistence/repositories/property.repository.impl';
 import { DrizzlePropertyImageRepository } from '@infrastructure/persistence/repositories/property-image.repository.impl';
+import { DrizzlePropertyPriceRepository } from '@infrastructure/persistence/repositories/property-price.repository.impl';
 
 // Domain
 import { PROPERTY_REPOSITORY } from '@domain/property/repositories/property.repository';
 import { PROPERTY_IMAGE_REPOSITORY } from '@domain/property/repositories/property-image.repository';
+import { PROPERTY_PRICE_REPOSITORY } from '@domain/property/repositories/property-price.repository';
 
 // Import UsersModule for authentication
 import { UsersModule } from '../users/users.module';
@@ -46,7 +48,11 @@ import { UsersModule } from '../users/users.module';
       provide: PROPERTY_IMAGE_REPOSITORY,
       useClass: DrizzlePropertyImageRepository,
     },
+    {
+      provide: PROPERTY_PRICE_REPOSITORY,
+      useClass: DrizzlePropertyPriceRepository,
+    },
   ],
-  exports: [PROPERTY_REPOSITORY, PROPERTY_IMAGE_REPOSITORY],
+  exports: [PROPERTY_REPOSITORY, PROPERTY_IMAGE_REPOSITORY, PROPERTY_PRICE_REPOSITORY],
 })
 export class PropertiesModule {}

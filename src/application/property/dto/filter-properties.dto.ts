@@ -47,7 +47,7 @@ export class FilterPropertiesDto {
   status?: PropertyStatus;
 
   @ApiPropertyOptional({
-    description: 'Filter by currency',
+    description: 'Filter by main currency',
     enum: Currency,
   })
   @IsEnum(Currency)
@@ -68,26 +68,29 @@ export class FilterPropertiesDto {
   @Type(() => Number)
   maxPrice?: number;
 
-  @ApiPropertyOptional({ description: 'Filter by city', example: 'CABA' })
-  @IsString()
-  @IsOptional()
-  city?: string;
-
   @ApiPropertyOptional({
-    description: 'Filter by state',
-    example: 'Buenos Aires',
+    description: 'Filter by country ID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @IsString()
   @IsOptional()
-  state?: string;
+  countryId?: string;
 
   @ApiPropertyOptional({
-    description: 'Filter by neighborhood',
-    example: 'Palermo',
+    description: 'Filter by city ID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @IsString()
   @IsOptional()
-  neighborhood?: string;
+  cityId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filter by neighborhood ID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @IsString()
+  @IsOptional()
+  neighborhoodId?: string;
 
   @ApiPropertyOptional({
     description: 'Minimum bedrooms',
@@ -143,7 +146,7 @@ export class FilterPropertiesDto {
 
   @ApiPropertyOptional({
     description: 'Free text search across title, description, address, city',
-    example: 'palermo balcón',
+    example: 'Las Mercedes balcón',
   })
   @IsString()
   @IsOptional()

@@ -16,7 +16,7 @@ export interface PropertyProps {
   status: PropertyStatus;
   internalCode?: string;
 
-  // Pricing
+  // Main price (denormalized from property_prices)
   currency: Currency;
   price: number;
   previousPrice?: number;
@@ -28,11 +28,10 @@ export interface PropertyProps {
   shortDescription?: string;
   privateNotes?: string;
 
-  // Location
-  country?: string;
-  state?: string;
-  city?: string;
-  neighborhood?: string;
+  // Location (FK references)
+  countryId?: string;
+  cityId?: string;
+  neighborhoodId?: string;
   address?: string;
   streetNumber?: string;
   floor?: string;
@@ -116,7 +115,7 @@ export class Property {
   public readonly status: PropertyStatus;
   public readonly internalCode?: string;
 
-  // Pricing
+  // Main price
   public readonly currency: Currency;
   public readonly price: number;
   public readonly previousPrice?: number;
@@ -128,11 +127,10 @@ export class Property {
   public readonly shortDescription?: string;
   public readonly privateNotes?: string;
 
-  // Location
-  public readonly country?: string;
-  public readonly state?: string;
-  public readonly city?: string;
-  public readonly neighborhood?: string;
+  // Location (FK references)
+  public readonly countryId?: string;
+  public readonly cityId?: string;
+  public readonly neighborhoodId?: string;
   public readonly address?: string;
   public readonly streetNumber?: string;
   public readonly floor?: string;

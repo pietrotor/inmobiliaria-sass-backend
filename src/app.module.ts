@@ -13,6 +13,7 @@ import { UsersModule } from './interface/http/users/users.module';
 import { SeedModule } from './interface/http/seed/seed.module';
 import { OrganizationsModule } from './interface/http/organizations/organizations.module';
 import { PropertiesModule } from './interface/http/properties/properties.module';
+import { LocationsModule } from './interface/http/locations/locations.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { PropertiesModule } from './interface/http/properties/properties.module'
     UsersModule,
     SeedModule,
     OrganizationsModule,
+    LocationsModule,
     PropertiesModule,
   ],
 })

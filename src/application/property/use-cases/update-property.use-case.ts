@@ -3,6 +3,10 @@ import {
   PropertyRepository,
   PROPERTY_REPOSITORY,
 } from '@domain/property/repositories/property.repository';
+import {
+  PropertyPriceRepository,
+  PROPERTY_PRICE_REPOSITORY,
+} from '@domain/property/repositories/property-price.repository';
 import { UpdatePropertyDto } from '../dto/update-property.dto';
 import { DatabaseErrorHandler } from '@infrastructure/errors/database-error.handler';
 
@@ -11,6 +15,8 @@ export class UpdatePropertyUseCase {
   constructor(
     @Inject(PROPERTY_REPOSITORY)
     private readonly propertyRepository: PropertyRepository,
+    @Inject(PROPERTY_PRICE_REPOSITORY)
+    private readonly propertyPriceRepository: PropertyPriceRepository,
   ) {}
 
   async execute(id: string, updatePropertyDto: UpdatePropertyDto) {
@@ -33,17 +39,48 @@ export class UpdatePropertyUseCase {
         slug = await this.ensureUniqueSlug(baseSlug, id);
       }
 
+      // Handle prices update if provided
+      let mainPrice = property.price;
+      let mainCurrency = property.currency;
+
+      if (updatePropertyDto.prices && updatePropertyDto.prices.length > 0) {
+        // Delete old prices and insert new ones
+        await this.propertyPriceRepository.deleteByPropertyId(id);
+
+        const mainPriceDto =
+          updatePropertyDto.prices.find((p) => p.isMain) ||
+          updatePropertyDto.prices[0];
+
+        mainPrice = mainPriceDto.price;
+        mainCurrency = mainPriceDto.currency;
+
+        await Promise.all(
+          updatePropertyDto.prices.map((priceDto) =>
+            this.propertyPriceRepository.create({
+              propertyId: id,
+              currency: priceDto.currency,
+              price: priceDto.price,
+              isMain: priceDto.currency === mainPriceDto.currency,
+            }),
+          ),
+        );
+      }
+
       // Recalculate pricePerSqm if price or area changed
-      const price = updatePropertyDto.price ?? property.price;
       const totalArea = updatePropertyDto.totalArea ?? property.totalArea;
       let pricePerSqm = property.pricePerSqm;
       if (totalArea && totalArea > 0) {
-        pricePerSqm = Math.round((price / totalArea) * 100) / 100;
+        pricePerSqm = Math.round((mainPrice / totalArea) * 100) / 100;
       }
 
+      // Build update data excluding prices (handled separately)
+      const { prices, ...propertyFields } = updatePropertyDto;
+
       const updatedProperty = await this.propertyRepository.update(id, {
-        ...updatePropertyDto,
+        ...propertyFields,
         slug,
+        price: mainPrice,
+        currency: mainCurrency,
         pricePerSqm,
       } as any);
 

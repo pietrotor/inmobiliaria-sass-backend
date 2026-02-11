@@ -3,6 +3,10 @@ import {
   PropertyRepository,
   PROPERTY_REPOSITORY,
 } from '@domain/property/repositories/property.repository';
+import {
+  PropertyPriceRepository,
+  PROPERTY_PRICE_REPOSITORY,
+} from '@domain/property/repositories/property-price.repository';
 import { PropertyStatus } from '@domain/property/value-objects/property-status.vo';
 import { CreatePropertyDto } from '../dto/create-property.dto';
 import { DatabaseErrorHandler } from '@infrastructure/errors/database-error.handler';
@@ -12,6 +16,8 @@ export class CreatePropertyUseCase {
   constructor(
     @Inject(PROPERTY_REPOSITORY)
     private readonly propertyRepository: PropertyRepository,
+    @Inject(PROPERTY_PRICE_REPOSITORY)
+    private readonly propertyPriceRepository: PropertyPriceRepository,
   ) {}
 
   async execute(
@@ -23,14 +29,21 @@ export class CreatePropertyUseCase {
       const baseSlug = this.generateSlug(createPropertyDto.title);
       const slug = await this.ensureUniqueSlug(baseSlug);
 
-      // Calculate price per sqm if total area is provided
+      // Determine the main price: the one marked as isMain, or the first one
+      const mainPriceDto =
+        createPropertyDto.prices.find((p) => p.isMain) ||
+        createPropertyDto.prices[0];
+
+      // Calculate price per sqm based on main price
       let pricePerSqm: number | undefined;
       if (createPropertyDto.totalArea && createPropertyDto.totalArea > 0) {
-        pricePerSqm = Math.round(
-          (createPropertyDto.price / createPropertyDto.totalArea) * 100,
-        ) / 100;
+        pricePerSqm =
+          Math.round(
+            (mainPriceDto.price / createPropertyDto.totalArea) * 100,
+          ) / 100;
       }
 
+      // Create the property with the main price denormalized
       const property = await this.propertyRepository.create({
         organizationId,
         title: createPropertyDto.title,
@@ -40,8 +53,8 @@ export class CreatePropertyUseCase {
         status: PropertyStatus.DRAFT,
         internalCode: createPropertyDto.internalCode,
 
-        currency: createPropertyDto.currency,
-        price: createPropertyDto.price,
+        currency: mainPriceDto.currency,
+        price: mainPriceDto.price,
         previousPrice: createPropertyDto.previousPrice,
         maintenanceFee: createPropertyDto.maintenanceFee,
         pricePerSqm,
@@ -50,10 +63,9 @@ export class CreatePropertyUseCase {
         shortDescription: createPropertyDto.shortDescription,
         privateNotes: createPropertyDto.privateNotes,
 
-        country: createPropertyDto.country,
-        state: createPropertyDto.state,
-        city: createPropertyDto.city,
-        neighborhood: createPropertyDto.neighborhood,
+        countryId: createPropertyDto.countryId,
+        cityId: createPropertyDto.cityId,
+        neighborhoodId: createPropertyDto.neighborhoodId,
         address: createPropertyDto.address,
         streetNumber: createPropertyDto.streetNumber,
         floor: createPropertyDto.floor,
@@ -114,7 +126,22 @@ export class CreatePropertyUseCase {
         deleted: false,
       });
 
-      return property;
+      // Create all prices in property_prices table
+      const prices = await Promise.all(
+        createPropertyDto.prices.map((priceDto) =>
+          this.propertyPriceRepository.create({
+            propertyId: property.id,
+            currency: priceDto.currency,
+            price: priceDto.price,
+            isMain: priceDto.currency === mainPriceDto.currency,
+          }),
+        ),
+      );
+
+      return {
+        ...property,
+        prices,
+      };
     } catch (error) {
       DatabaseErrorHandler.handle(error, 'CreatePropertyUseCase');
     }
