@@ -12,7 +12,6 @@ import { LoggerModule } from './infrastructure/logger/logger.module';
 import { UsersModule } from './interface/http/users/users.module';
 import { SeedModule } from './interface/http/seed/seed.module';
 import { OrganizationsModule } from './interface/http/organizations/organizations.module';
-import { PropertiesModule } from './interface/http/properties/properties.module';
 import { LocationsModule } from './interface/http/locations/locations.module';
 import { FilesModule } from './interface/http/files/files.module';
 
@@ -33,7 +32,6 @@ import { FilesModule } from './interface/http/files/files.module';
     SeedModule,
     OrganizationsModule,
     LocationsModule,
-    PropertiesModule,
     FilesModule,
   ],
 })

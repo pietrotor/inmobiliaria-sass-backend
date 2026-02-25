@@ -1,7 +1,0 @@
-export enum PropertyCondition {
-  NEW = 'NEW',
-  USED = 'USED',
-  UNDER_CONSTRUCTION = 'UNDER_CONSTRUCTION',
-  REMODELED = 'REMODELED',
-  TO_REMODEL = 'TO_REMODEL',
-}

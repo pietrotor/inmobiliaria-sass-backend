@@ -8,7 +8,7 @@ import {
   Matches,
   MaxLength,
 } from 'class-validator';
-import { Currency } from '@domain/property/value-objects/currency.vo';
+import { Currency } from '@domain/common/value-objects/currency.vo';
 
 export class CreateOrganizationDto {
   @ApiProperty({

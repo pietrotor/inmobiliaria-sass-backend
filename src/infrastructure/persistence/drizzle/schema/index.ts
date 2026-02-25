@@ -3,6 +3,3 @@ export * from './user.schema';
 export * from './country.schema';
 export * from './city.schema';
 export * from './neighborhood.schema';
-export * from './property.schema';
-export * from './property-image.schema';
-export * from './property-price.schema';
