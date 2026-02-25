@@ -5,13 +5,23 @@ import {
   PutObjectCommand,
   DeleteObjectCommand,
 } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { S3Config } from './s3-config.interface';
+import {
+  StorageService,
+  GenerateUploadUrlParams,
+  UploadUrlResult,
+  UploadFileParams,
+  GenerateKeyParams,
+} from '@domain/common/services/storage.service';
+
+const DEFAULT_PRESIGNED_URL_EXPIRY = 300;
 
 @Injectable()
-export class S3Service {
+export class S3StorageService implements StorageService {
   private readonly s3Client: S3Client;
   private readonly config: S3Config;
-  private readonly logger = new Logger(S3Service.name);
+  private readonly logger = new Logger(S3StorageService.name);
 
   constructor(private readonly configService: ConfigService) {
     this.config = {
@@ -33,18 +43,39 @@ export class S3Service {
     });
   }
 
-  /**
-   * Uploads a file to S3 and returns the public URL
-   */
-  async uploadFile(
-    file: Buffer,
-    key: string,
-    contentType?: string,
-  ): Promise<string> {
+  async generateUploadUrl(
+    params: GenerateUploadUrlParams,
+  ): Promise<UploadUrlResult> {
+    const { key, contentType, expiresInSeconds } = params;
+
     const command = new PutObjectCommand({
       Bucket: this.config.bucket,
       Key: key,
-      Body: file,
+      ContentType: contentType,
+    });
+
+    const uploadUrl = await getSignedUrl(
+      this.s3Client as any,
+      command,
+      { expiresIn: expiresInSeconds ?? DEFAULT_PRESIGNED_URL_EXPIRY },
+    );
+
+    this.logger.log(`Generated presigned upload URL for key: ${key}`);
+
+    return {
+      uploadUrl,
+      publicUrl: this.getPublicUrl(key),
+      key,
+    };
+  }
+
+  async uploadFile(params: UploadFileParams): Promise<string> {
+    const { buffer, key, contentType } = params;
+
+    const command = new PutObjectCommand({
+      Bucket: this.config.bucket,
+      Key: key,
+      Body: buffer,
       ContentType: contentType,
     });
 
@@ -54,9 +85,6 @@ export class S3Service {
     return this.getPublicUrl(key);
   }
 
-  /**
-   * Deletes a file from S3
-   */
   async deleteFile(key: string): Promise<void> {
     const command = new DeleteObjectCommand({
       Bucket: this.config.bucket,
@@ -67,27 +95,14 @@ export class S3Service {
     this.logger.log(`Deleted file from S3: ${key}`);
   }
 
-  /**
-   * Generates a consistent S3 key pattern for images
-   * Format: {organizationId}/{entityType}/{entityId}/{imageId}-{timestamp}.{ext}
-   */
-  generateKey(
-    organizationId: string,
-    entityType: 'property' | 'unit' | 'organization' | 'user',
-    entityId: string,
-    filename: string,
-  ): string {
-    const timestamp = Date.now();
-    const imageId = crypto.randomUUID();
-    const extension = filename.split('.').pop() || 'jpg';
+  getPublicUrl(key: string): string {
+    if (this.config.cdnUrl) {
+      return `${this.config.cdnUrl}/${key}`;
+    }
 
-    return `${organizationId}/${entityType}s/${entityId}/${imageId}-${timestamp}.${extension}`;
+    return `https://${this.config.bucket}.s3.${this.config.region}.amazonaws.com/${key}`;
   }
 
-  /**
-   * Extracts the S3 key from a public URL
-   * Works with both S3 direct URLs and CloudFront URLs
-   */
   extractKeyFromUrl(url: string): string | null {
     try {
       if (this.config.cdnUrl && url.startsWith(this.config.cdnUrl)) {
@@ -105,15 +120,16 @@ export class S3Service {
     }
   }
 
-  /**
-   * Gets the public URL for a file
-   * Uses CloudFront URL if configured, otherwise S3 direct URL
-   */
-  getPublicUrl(key: string): string {
-    if (this.config.cdnUrl) {
-      return `${this.config.cdnUrl}/${key}`;
-    }
+  generateKey(params: GenerateKeyParams): string {
+    const { context, entityId, filename, subfolder } = params;
+    const timestamp = Date.now();
+    const uniqueId = crypto.randomUUID();
+    const extension = filename.split('.').pop() || 'bin';
 
-    return `https://${this.config.bucket}.s3.${this.config.region}.amazonaws.com/${key}`;
+    const basePath = subfolder
+      ? `${context}/${entityId}/${subfolder}`
+      : `${context}/${entityId}`;
+
+    return `${basePath}/${uniqueId}-${timestamp}.${extension}`;
   }
 }

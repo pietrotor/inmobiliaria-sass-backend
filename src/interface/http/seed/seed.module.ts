@@ -1,18 +1,27 @@
 import { Module } from '@nestjs/common';
 
-// Controllers
 import { SeedController } from './seed.controller';
 
-// Use Cases
 import { SeedUsersUseCase } from '@application/user/use-cases/seed-users.use-case';
 
-// Modules
 import { UsersModule } from '../users/users.module';
 import { OrganizationsModule } from '../organizations/organizations.module';
 import { LocationsModule } from '../locations/locations.module';
+import { DevelopersModule } from '../developers/developers.module';
+import { ProjectsModule } from '../projects/projects.module';
+import { MediaModule } from '../media/media.module';
+import { DrizzleModule } from '@infrastructure/persistence/drizzle/drizzle.module';
 
 @Module({
-  imports: [UsersModule, OrganizationsModule, LocationsModule],
+  imports: [
+    DrizzleModule,
+    UsersModule,
+    OrganizationsModule,
+    LocationsModule,
+    DevelopersModule,
+    ProjectsModule,
+    MediaModule,
+  ],
   controllers: [SeedController],
   providers: [SeedUsersUseCase],
 })

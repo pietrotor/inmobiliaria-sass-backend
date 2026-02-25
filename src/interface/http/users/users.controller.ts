@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Inject,
   Post,
   Put,
   Body,
@@ -32,9 +33,17 @@ import { CreateUserDto } from '@application/user/dto/create-user.dto';
 import { LoginUserDto } from '@application/user/dto/login-user.dto';
 import { UpdateProfileDto } from '@application/user/dto/update-profile.dto';
 import { ChangePasswordDto } from '@application/user/dto/change-password.dto';
+import {
+  UserResponseDto,
+  UserWithTokenResponseDto,
+  LoginResponseDto,
+} from '@application/user/dto/user-response.dto';
 import { Auth, GetUser } from '@interface/http/common';
 import { User } from '@domain/user/entities/user.entity';
-import { S3Service } from '@infrastructure/storage/s3/s3.service';
+import {
+  StorageService,
+  STORAGE_SERVICE,
+} from '@domain/common/services/storage.service';
 
 @ApiTags('Users')
 @Controller('users')
@@ -45,117 +54,32 @@ export class UsersController {
     private readonly checkAuthStatusUseCase: CheckAuthStatusUseCase,
     private readonly updateProfileUseCase: UpdateProfileUseCase,
     private readonly changePasswordUseCase: ChangePasswordUseCase,
-    private readonly s3Service: S3Service,
+    @Inject(STORAGE_SERVICE)
+    private readonly storageService: StorageService,
   ) {}
 
   @Post('')
-  @ApiOperation({
-    summary: 'Register a new user',
-    description:
-      'Creates a new user account with the provided information. Passwords are hashed before storage.',
-  })
-  @ApiBody({
-    type: CreateUserDto,
-    description: 'User registration data',
-    examples: {
-      user: {
-        value: {
-          name: 'John',
-          lastName: 'Doe',
-          email: 'john.doe@example.com',
-          phoneNumber: '69123456',
-          password: 'SecurePass123!',
-          roles: ['user'],
-        },
-      },
-      admin: {
-        value: {
-          name: 'Jane',
-          lastName: 'Smith',
-          email: 'jane.admin@example.com',
-          phoneNumber: '69654321',
-          password: 'AdminPass123!',
-          roles: ['admin', 'user'],
-        },
-      },
-    },
-  })
+  @ApiOperation({ summary: 'Register a new user' })
+  @ApiBody({ type: CreateUserDto })
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'User successfully created',
-    schema: {
-      example: {
-        id: '123e4567-e89b-12d3-a456-426614174000',
-        name: 'John',
-        lastName: 'Doe',
-        email: 'john.doe@example.com',
-        phoneNumber: '69123456',
-        roles: ['user'],
-        isActive: true,
-        token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-      },
-    },
+    type: UserWithTokenResponseDto,
   })
-  @ApiBadRequestResponse({
-    description: 'Invalid input data or email already exists',
-    schema: {
-      example: {
-        statusCode: 400,
-        message: 'Email already exists',
-        error: 'Bad Request',
-      },
-    },
-  })
+  @ApiBadRequestResponse({ description: 'Invalid input data or email already exists' })
   create(@Body() createUserDto: CreateUserDto) {
     return this.createUserUseCase.execute(createUserDto);
   }
 
   @Post('login')
-  @ApiOperation({
-    summary: 'User login',
-    description:
-      'Authenticates a user with email and password. Returns a JWT token valid for 160 hours.',
-  })
-  @ApiBody({
-    type: LoginUserDto,
-    description: 'User credentials',
-    examples: {
-      example: {
-        value: {
-          email: 'john.doe@example.com',
-          password: 'SecurePass123!',
-        },
-      },
-    },
-  })
+  @ApiOperation({ summary: 'User login' })
+  @ApiBody({ type: LoginUserDto })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Login successful',
-    schema: {
-      example: {
-        user: {
-          id: '123e4567-e89b-12d3-a456-426614174000',
-          name: 'John',
-          lastName: 'Doe',
-          email: 'john.doe@example.com',
-          phoneNumber: '69123456',
-          roles: ['user'],
-          isActive: true,
-        },
-        token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-      },
-    },
+    type: LoginResponseDto,
   })
-  @ApiUnauthorizedResponse({
-    description: 'Invalid credentials or inactive account',
-    schema: {
-      example: {
-        statusCode: 401,
-        message: 'Invalid credentials',
-        error: 'Unauthorized',
-      },
-    },
-  })
+  @ApiUnauthorizedResponse({ description: 'Invalid credentials or inactive account' })
   login(@Body() loginUserDto: LoginUserDto) {
     return this.loginUserUseCase.execute(loginUserDto);
   }
@@ -163,35 +87,13 @@ export class UsersController {
   @Get('me')
   @Auth()
   @ApiBearerAuth()
-  @ApiOperation({
-    summary: 'Get current user',
-    description:
-      'Returns the authenticated user information based on the JWT token.',
-  })
+  @ApiOperation({ summary: 'Get current user' })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Current user retrieved successfully',
-    schema: {
-      example: {
-        id: '123e4567-e89b-12d3-a456-426614174000',
-        name: 'John',
-        lastName: 'Doe',
-        email: 'john.doe@example.com',
-        phoneNumber: '69123456',
-        roles: ['user'],
-        isActive: true,
-      },
-    },
+    type: UserResponseDto,
   })
-  @ApiUnauthorizedResponse({
-    description: 'Invalid or expired token',
-    schema: {
-      example: {
-        statusCode: 401,
-        message: 'Unauthorized',
-      },
-    },
-  })
+  @ApiUnauthorizedResponse({ description: 'Invalid or expired token' })
   getCurrentUser(@GetUser() user: User) {
     return user;
   }
@@ -199,53 +101,26 @@ export class UsersController {
   @Get('auth/check-status')
   @Auth()
   @ApiBearerAuth()
-  @ApiOperation({
-    summary: 'Check authentication status',
-    description:
-      'Validates the JWT token and returns the current user information with a refreshed token.',
-  })
+  @ApiOperation({ summary: 'Check authentication status' })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Token is valid',
-    schema: {
-      example: {
-        id: '123e4567-e89b-12d3-a456-426614174000',
-        name: 'John',
-        lastName: 'Doe',
-        email: 'john.doe@example.com',
-        phoneNumber: '69123456',
-        roles: ['user'],
-        isActive: true,
-        token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-      },
-    },
+    description: 'Token is valid, returns refreshed token',
+    type: UserWithTokenResponseDto,
   })
-  @ApiUnauthorizedResponse({
-    description: 'Invalid or expired token',
-    schema: {
-      example: {
-        statusCode: 401,
-        message: 'Unauthorized',
-      },
-    },
-  })
+  @ApiUnauthorizedResponse({ description: 'Invalid or expired token' })
   checkAuthStatus(@GetUser() user: User) {
     return this.checkAuthStatusUseCase.execute(user);
   }
 
-  // ── Profile Management ─────────────────────────────────────────────
-
   @Put('me')
   @Auth()
   @ApiBearerAuth()
-  @ApiOperation({
-    summary: 'Update current user profile',
-    description: 'Updates the authenticated user\'s profile (name, lastName, phoneNumber).',
-  })
+  @ApiOperation({ summary: 'Update current user profile' })
   @ApiBody({ type: UpdateProfileDto })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Profile updated successfully',
+    type: UserResponseDto,
   })
   @ApiBadRequestResponse({ description: 'Invalid input data' })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
@@ -259,17 +134,15 @@ export class UsersController {
   @Put('me/password')
   @Auth()
   @ApiBearerAuth()
-  @ApiOperation({
-    summary: 'Change password',
-    description:
-      'Changes the authenticated user\'s password. Requires the current password for verification.',
-  })
+  @ApiOperation({ summary: 'Change password' })
   @ApiBody({ type: ChangePasswordDto })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Password changed successfully',
     schema: {
-      example: { message: 'Password changed successfully' },
+      properties: {
+        message: { type: 'string', example: 'Password changed successfully' },
+      },
     },
   })
   @ApiBadRequestResponse({ description: 'Current password is incorrect or new password is invalid' })
@@ -286,29 +159,30 @@ export class UsersController {
   @ApiBearerAuth()
   @UseInterceptors(FileInterceptor('file'))
   @ApiConsumes('multipart/form-data')
-  @ApiOperation({
-    summary: 'Upload user avatar',
-    description: 'Uploads an avatar image for the authenticated user. Max 5MB. Supported: jpg, png, webp, gif.',
-  })
+  @ApiOperation({ summary: 'Upload user avatar' })
   @ApiBody({
     schema: {
       type: 'object',
-      properties: {
-        file: {
-          type: 'string',
-          format: 'binary',
-          description: 'Avatar image file (max 5MB)',
-        },
-      },
       required: ['file'],
+      properties: {
+        file: { type: 'string', format: 'binary' },
+      },
     },
   })
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'Avatar uploaded successfully',
     schema: {
-      example: {
-        url: 'https://bucket.s3.region.amazonaws.com/org/users/user-id/avatar.jpg',
+      properties: {
+        url: {
+          type: 'string',
+          example:
+            'https://bucket.s3.region.amazonaws.com/users/user-id/avatars/avatar.jpg',
+        },
+        key: {
+          type: 'string',
+          example: 'users/user-id/avatars/avatar.jpg',
+        },
       },
     },
   })
@@ -326,18 +200,18 @@ export class UsersController {
     )
     file: Express.Multer.File,
   ) {
-    const key = this.s3Service.generateKey(
-      user.organizationId,
-      'user',
-      user.id,
-      file.originalname,
-    );
+    const key = this.storageService.generateKey({
+      context: 'users',
+      entityId: user.id,
+      filename: file.originalname,
+      subfolder: 'avatars',
+    });
 
-    const url = await this.s3Service.uploadFile(
-      file.buffer,
+    const url = await this.storageService.uploadFile({
+      buffer: file.buffer,
       key,
-      file.mimetype,
-    );
+      contentType: file.mimetype,
+    });
 
     return { url, key };
   }

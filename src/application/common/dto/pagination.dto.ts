@@ -1,11 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsOptional, IsPositive, Min } from 'class-validator';
+import {
+  PAGINATION_DEFAULT_LIMIT,
+  PAGINATION_DEFAULT_OFFSET,
+} from '@domain/common/constants/pagination.constants';
 
 export class PaginationDto {
   @ApiProperty({
-    default: 10,
-    description: 'How many rows do you need',
+    default: PAGINATION_DEFAULT_LIMIT,
   })
   @IsOptional()
   @IsPositive()
@@ -13,8 +16,7 @@ export class PaginationDto {
   limit?: number;
 
   @ApiProperty({
-    default: 0,
-    description: 'How many rows do you want to skip',
+    default: PAGINATION_DEFAULT_OFFSET,
   })
   @IsOptional()
   @Min(0)

@@ -22,6 +22,13 @@
       "when": 1770954640035,
       "tag": "0002_bouncy_wolf_cub",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1772059437413,
+      "tag": "0003_puzzling_raider",
+      "breakpoints": true
     }
   ]
 }

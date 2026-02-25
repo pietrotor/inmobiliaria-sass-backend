@@ -1,21 +1,21 @@
 import { Controller, Get } from '@nestjs/common';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 
 import { SeedUsersUseCase } from '@application/user/use-cases/seed-users.use-case';
 
 @ApiTags('Seed')
 @Controller('seed')
 export class SeedController {
-  constructor(private readonly seedUsersUseCase: SeedUsersUseCase) {}
+  constructor(private readonly seedUseCase: SeedUsersUseCase) {}
 
   @Get()
   @ApiOperation({
-    summary: 'Seed users and organizations',
+    summary: 'Seed entire database',
     description:
-      'Deletes all users/organizations and recreates from seed data.',
+      'Deletes all data and recreates organizations, users, countries, cities, developers, projects, and media from seed data.',
   })
-  // @Auth(ValidRoles.ADMIN)
+  @ApiResponse({ status: 200, description: 'Database seeded successfully' })
   executeSeed() {
-    return this.seedUsersUseCase.execute();
+    return this.seedUseCase.execute();
   }
 }
