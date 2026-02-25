@@ -2,15 +2,23 @@ import {
   Controller,
   Get,
   Post,
+  Put,
   Body,
   HttpStatus,
+  UseInterceptors,
+  UploadedFile,
+  ParseFilePipe,
+  MaxFileSizeValidator,
+  FileTypeValidator,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
   ApiBody,
+  ApiConsumes,
   ApiUnauthorizedResponse,
   ApiBadRequestResponse,
 } from '@nestjs/swagger';
@@ -18,10 +26,15 @@ import {
 import { CreateUserUseCase } from '@application/user/use-cases/create-user.use-case';
 import { LoginUserUseCase } from '@application/user/use-cases/login-user.use-case';
 import { CheckAuthStatusUseCase } from '@application/user/use-cases/check-auth-status.use-case';
+import { UpdateProfileUseCase } from '@application/user/use-cases/update-profile.use-case';
+import { ChangePasswordUseCase } from '@application/user/use-cases/change-password.use-case';
 import { CreateUserDto } from '@application/user/dto/create-user.dto';
 import { LoginUserDto } from '@application/user/dto/login-user.dto';
+import { UpdateProfileDto } from '@application/user/dto/update-profile.dto';
+import { ChangePasswordDto } from '@application/user/dto/change-password.dto';
 import { Auth, GetUser } from '@interface/http/common';
 import { User } from '@domain/user/entities/user.entity';
+import { S3Service } from '@infrastructure/storage/s3/s3.service';
 
 @ApiTags('Users')
 @Controller('users')
@@ -30,6 +43,9 @@ export class UsersController {
     private readonly createUserUseCase: CreateUserUseCase,
     private readonly loginUserUseCase: LoginUserUseCase,
     private readonly checkAuthStatusUseCase: CheckAuthStatusUseCase,
+    private readonly updateProfileUseCase: UpdateProfileUseCase,
+    private readonly changePasswordUseCase: ChangePasswordUseCase,
+    private readonly s3Service: S3Service,
   ) {}
 
   @Post('')
@@ -215,5 +231,114 @@ export class UsersController {
   })
   checkAuthStatus(@GetUser() user: User) {
     return this.checkAuthStatusUseCase.execute(user);
+  }
+
+  // ── Profile Management ─────────────────────────────────────────────
+
+  @Put('me')
+  @Auth()
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Update current user profile',
+    description: 'Updates the authenticated user\'s profile (name, lastName, phoneNumber).',
+  })
+  @ApiBody({ type: UpdateProfileDto })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Profile updated successfully',
+  })
+  @ApiBadRequestResponse({ description: 'Invalid input data' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  updateProfile(
+    @GetUser() user: User,
+    @Body() updateProfileDto: UpdateProfileDto,
+  ) {
+    return this.updateProfileUseCase.execute(user.id, updateProfileDto);
+  }
+
+  @Put('me/password')
+  @Auth()
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Change password',
+    description:
+      'Changes the authenticated user\'s password. Requires the current password for verification.',
+  })
+  @ApiBody({ type: ChangePasswordDto })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Password changed successfully',
+    schema: {
+      example: { message: 'Password changed successfully' },
+    },
+  })
+  @ApiBadRequestResponse({ description: 'Current password is incorrect or new password is invalid' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  changePassword(
+    @GetUser() user: User,
+    @Body() changePasswordDto: ChangePasswordDto,
+  ) {
+    return this.changePasswordUseCase.execute(user.id, changePasswordDto);
+  }
+
+  @Post('me/avatar')
+  @Auth()
+  @ApiBearerAuth()
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({
+    summary: 'Upload user avatar',
+    description: 'Uploads an avatar image for the authenticated user. Max 5MB. Supported: jpg, png, webp, gif.',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'Avatar image file (max 5MB)',
+        },
+      },
+      required: ['file'],
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'Avatar uploaded successfully',
+    schema: {
+      example: {
+        url: 'https://bucket.s3.region.amazonaws.com/org/users/user-id/avatar.jpg',
+      },
+    },
+  })
+  @ApiBadRequestResponse({ description: 'Invalid file type or size' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  async uploadAvatar(
+    @GetUser() user: User,
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 5 * 1024 * 1024 }),
+          new FileTypeValidator({ fileType: /^image\/(jpeg|jpg|png|webp|gif)$/ }),
+        ],
+      }),
+    )
+    file: Express.Multer.File,
+  ) {
+    const key = this.s3Service.generateKey(
+      user.organizationId,
+      'user',
+      user.id,
+      file.originalname,
+    );
+
+    const url = await this.s3Service.uploadFile(
+      file.buffer,
+      key,
+      file.mimetype,
+    );
+
+    return { url, key };
   }
 }

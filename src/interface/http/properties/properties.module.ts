@@ -11,9 +11,13 @@ import { UpdatePropertyUseCase } from '@application/property/use-cases/update-pr
 import { DeletePropertyUseCase } from '@application/property/use-cases/delete-property.use-case';
 import { AddPropertyImageUseCase } from '@application/property/use-cases/add-property-image.use-case';
 import { DeletePropertyImageUseCase } from '@application/property/use-cases/delete-property-image.use-case';
+import { UploadPropertyImageUseCase } from '@application/property/use-cases/upload-property-image.use-case';
+import { AiSearchPropertiesUseCase } from '@application/property/use-cases/ai-search-properties.use-case';
 
 // Infrastructure
 import { DrizzleModule } from '@infrastructure/persistence/drizzle/drizzle.module';
+import { OpenAiModule } from '@infrastructure/ai/openai/openai.module';
+import { S3Module } from '@infrastructure/storage/s3/s3.module';
 import { DrizzlePropertyRepository } from '@infrastructure/persistence/repositories/property.repository.impl';
 import { DrizzlePropertyImageRepository } from '@infrastructure/persistence/repositories/property-image.repository.impl';
 import { DrizzlePropertyPriceRepository } from '@infrastructure/persistence/repositories/property-price.repository.impl';
@@ -26,8 +30,11 @@ import { PROPERTY_PRICE_REPOSITORY } from '@domain/property/repositories/propert
 // Import UsersModule for authentication
 import { UsersModule } from '../users/users.module';
 
+// Import LocationsModule for AI search context
+import { LocationsModule } from '../locations/locations.module';
+
 @Module({
-  imports: [DrizzleModule, UsersModule],
+  imports: [DrizzleModule, UsersModule, OpenAiModule, LocationsModule, S3Module],
   controllers: [PropertiesController],
   providers: [
     // Use Cases
@@ -38,6 +45,8 @@ import { UsersModule } from '../users/users.module';
     DeletePropertyUseCase,
     AddPropertyImageUseCase,
     DeletePropertyImageUseCase,
+    UploadPropertyImageUseCase,
+    AiSearchPropertiesUseCase,
 
     // Repository Implementations
     {

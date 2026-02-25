@@ -8,6 +8,7 @@ import {
   OrganizationRepository,
   ORGANIZATION_REPOSITORY,
 } from '@domain/organization/repositories/organization.repository';
+import { Organization } from '@domain/organization/entities/organization.entity';
 import { UpdateOrganizationDto } from '../dto/update-organization.dto';
 import { DatabaseErrorHandler } from '@infrastructure/errors/database-error.handler';
 
@@ -43,21 +44,23 @@ export class UpdateOrganizationUseCase {
         }
       }
 
+      // If name is updated, regenerate slug
+      const updateData: any = { ...updateOrganizationDto };
+      if (updateOrganizationDto.name && updateOrganizationDto.name !== organization.name) {
+        let slug = Organization.generateSlug(updateOrganizationDto.name);
+        const existingSlug = await this.organizationRepository.findBySlug(slug);
+        if (existingSlug && existingSlug.id !== id) {
+          slug = `${slug}-${Date.now()}`;
+        }
+        updateData.slug = slug;
+      }
+
       const updatedOrganization = await this.organizationRepository.update(
         id,
-        updateOrganizationDto,
+        updateData,
       );
 
-      return {
-        id: updatedOrganization.id,
-        name: updatedOrganization.name,
-        email: updatedOrganization.email,
-        phone: updatedOrganization.phone,
-        address: updatedOrganization.address,
-        isActive: updatedOrganization.isActive,
-        createdAt: updatedOrganization.createdAt,
-        updatedAt: updatedOrganization.updatedAt,
-      };
+      return updatedOrganization;
     } catch (error) {
       DatabaseErrorHandler.handle(error, 'UpdateOrganizationUseCase');
     }

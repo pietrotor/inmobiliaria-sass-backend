@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   S3Client,
@@ -11,6 +11,7 @@ import { S3Config } from './s3-config.interface';
 export class S3Service {
   private readonly s3Client: S3Client;
   private readonly config: S3Config;
+  private readonly logger = new Logger(S3Service.name);
 
   constructor(private readonly configService: ConfigService) {
     this.config = {
@@ -35,15 +36,21 @@ export class S3Service {
   /**
    * Uploads a file to S3 and returns the public URL
    */
-  async uploadFile(file: Buffer, key: string): Promise<string> {
+  async uploadFile(
+    file: Buffer,
+    key: string,
+    contentType?: string,
+  ): Promise<string> {
     const command = new PutObjectCommand({
       Bucket: this.config.bucket,
       Key: key,
       Body: file,
+      ContentType: contentType,
     });
 
     await this.s3Client.send(command);
 
+    this.logger.log(`Uploaded file to S3: ${key}`);
     return this.getPublicUrl(key);
   }
 
@@ -57,6 +64,7 @@ export class S3Service {
     });
 
     await this.s3Client.send(command);
+    this.logger.log(`Deleted file from S3: ${key}`);
   }
 
   /**
@@ -65,7 +73,7 @@ export class S3Service {
    */
   generateKey(
     organizationId: string,
-    entityType: 'property' | 'unit',
+    entityType: 'property' | 'unit' | 'organization' | 'user',
     entityId: string,
     filename: string,
   ): string {
@@ -77,10 +85,31 @@ export class S3Service {
   }
 
   /**
+   * Extracts the S3 key from a public URL
+   * Works with both S3 direct URLs and CloudFront URLs
+   */
+  extractKeyFromUrl(url: string): string | null {
+    try {
+      if (this.config.cdnUrl && url.startsWith(this.config.cdnUrl)) {
+        return url.replace(`${this.config.cdnUrl}/`, '');
+      }
+
+      const s3Prefix = `https://${this.config.bucket}.s3.${this.config.region}.amazonaws.com/`;
+      if (url.startsWith(s3Prefix)) {
+        return url.replace(s3Prefix, '');
+      }
+
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
    * Gets the public URL for a file
    * Uses CloudFront URL if configured, otherwise S3 direct URL
    */
-  private getPublicUrl(key: string): string {
+  getPublicUrl(key: string): string {
     if (this.config.cdnUrl) {
       return `${this.config.cdnUrl}/${key}`;
     }

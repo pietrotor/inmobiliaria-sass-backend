@@ -3,6 +3,7 @@ import {
   OrganizationRepository,
   ORGANIZATION_REPOSITORY,
 } from '@domain/organization/repositories/organization.repository';
+import { Organization } from '@domain/organization/entities/organization.entity';
 import { CreateOrganizationDto } from '../dto/create-organization.dto';
 import { DatabaseErrorHandler } from '@infrastructure/errors/database-error.handler';
 
@@ -25,22 +26,24 @@ export class CreateOrganizationUseCase {
         throw new BadRequestException('Organization email already exists');
       }
 
+      // Generate slug from name
+      let slug = Organization.generateSlug(createOrganizationDto.name);
+
+      // Ensure slug uniqueness
+      const existingSlug =
+        await this.organizationRepository.findBySlug(slug);
+      if (existingSlug) {
+        slug = `${slug}-${Date.now()}`;
+      }
+
       const organization = await this.organizationRepository.create({
         ...createOrganizationDto,
+        slug,
         isActive: true,
         deleted: false,
       });
 
-      return {
-        id: organization.id,
-        name: organization.name,
-        email: organization.email,
-        phone: organization.phone,
-        address: organization.address,
-        isActive: organization.isActive,
-        createdAt: organization.createdAt,
-        updatedAt: organization.updatedAt,
-      };
+      return organization;
     } catch (error) {
       DatabaseErrorHandler.handle(error, 'CreateOrganizationUseCase');
     }

@@ -14,12 +14,7 @@ import { PropertyStatus } from '@domain/property/value-objects/property-status.v
 import { Currency } from '@domain/property/value-objects/currency.vo';
 
 export class FilterPropertiesDto {
-  @ApiPropertyOptional({
-    description: 'Filter by organization ID',
-    example: '123e4567-e89b-12d3-a456-426614174000',
-  })
-  @IsString()
-  @IsOptional()
+  // organizationId is set internally from the authenticated user, never from query params
   organizationId?: string;
 
   @ApiPropertyOptional({

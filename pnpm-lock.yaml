@@ -53,6 +53,9 @@ dependencies:
   nest-winston:
     specifier: ^1.10.2
     version: 1.10.2(@nestjs/common@11.1.8)(winston@3.18.3)
+  openai:
+    specifier: ^6.21.0
+    version: 6.21.0
   passport:
     specifier: ^0.7.0
     version: 0.7.0
@@ -6528,6 +6531,19 @@ packages:
     dependencies:
       mimic-fn: 2.1.0
     dev: true
+
+  /openai@6.21.0:
+    resolution: {integrity: sha512-26dQFi76dB8IiN/WKGQOV+yKKTTlRCxQjoi2WLt0kMcH8pvxVyvfdBDkld5GTl7W1qvBpwVOtFcsqktj3fBRpA==}
+    hasBin: true
+    peerDependencies:
+      ws: ^8.18.0
+      zod: ^3.25 || ^4.0
+    peerDependenciesMeta:
+      ws:
+        optional: true
+      zod:
+        optional: true
+    dev: false
 
   /optionator@0.9.4:
     resolution: {integrity: sha512-6IpQ7mKUxRcZNLIObR0hz7lxsapSSIYNZJwXPGeF0mTVqGKFIXj1DQcMoT22S3ROcLyY/rz0PWaWZ9ayWmad9g==}

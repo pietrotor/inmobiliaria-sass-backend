@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  BadRequestException,
 } from '@nestjs/common';
 import {
   PropertyRepository,
@@ -12,30 +13,30 @@ import {
   PropertyImageRepository,
   PROPERTY_IMAGE_REPOSITORY,
 } from '@domain/property/repositories/property-image.repository';
+import { S3Service } from '@infrastructure/storage/s3/s3.service';
 import { DatabaseErrorHandler } from '@infrastructure/errors/database-error.handler';
 
-export interface AddPropertyImageDto {
-  url: string;
-  altText?: string;
-  order?: number;
-  isPrimary?: boolean;
-}
-
 @Injectable()
-export class AddPropertyImageUseCase {
+export class UploadPropertyImageUseCase {
   constructor(
     @Inject(PROPERTY_REPOSITORY)
     private readonly propertyRepository: PropertyRepository,
     @Inject(PROPERTY_IMAGE_REPOSITORY)
     private readonly propertyImageRepository: PropertyImageRepository,
+    private readonly s3Service: S3Service,
   ) {}
 
   async execute(
     propertyId: string,
-    imageDto: AddPropertyImageDto,
+    file: Express.Multer.File,
     organizationId: string,
+    options?: { altText?: string; order?: number; isPrimary?: boolean },
   ) {
     try {
+      if (!file) {
+        throw new BadRequestException('File is required');
+      }
+
       // Verify property exists
       const property = await this.propertyRepository.findById(propertyId);
       if (!property) {
@@ -44,20 +45,34 @@ export class AddPropertyImageUseCase {
         );
       }
 
+      // Verify ownership
       if (property.organizationId !== organizationId) {
         throw new ForbiddenException(
-          'You do not have permission to add images to this property',
+          'You do not have permission to upload images to this property',
         );
       }
+
+      // Generate S3 key and upload
+      const key = this.s3Service.generateKey(
+        organizationId,
+        'property',
+        propertyId,
+        file.originalname,
+      );
+
+      const url = await this.s3Service.uploadFile(
+        file.buffer,
+        key,
+        file.mimetype,
+      );
 
       // Get existing images to determine order
       const existingImages =
         await this.propertyImageRepository.findByPropertyId(propertyId);
-      const order =
-        imageDto.order ?? existingImages.length;
+      const order = options?.order ?? existingImages.length;
 
       // If marking as primary, unmark others
-      if (imageDto.isPrimary) {
+      if (options?.isPrimary) {
         for (const img of existingImages) {
           if (img.isPrimary) {
             await this.propertyImageRepository.update(img.id, {
@@ -68,20 +83,19 @@ export class AddPropertyImageUseCase {
       }
 
       // If this is the first image, make it primary
-      const isPrimary =
-        imageDto.isPrimary ?? existingImages.length === 0;
+      const isPrimary = options?.isPrimary ?? existingImages.length === 0;
 
       const image = await this.propertyImageRepository.create({
         propertyId,
-        url: imageDto.url,
-        altText: imageDto.altText,
+        url,
+        altText: options?.altText,
         order,
         isPrimary,
       });
 
       return image;
     } catch (error) {
-      DatabaseErrorHandler.handle(error, 'AddPropertyImageUseCase');
+      DatabaseErrorHandler.handle(error, 'UploadPropertyImageUseCase');
     }
   }
 }

@@ -9,7 +9,13 @@ import {
   Query,
   ParseUUIDPipe,
   HttpStatus,
+  UseInterceptors,
+  UploadedFile,
+  ParseFilePipe,
+  MaxFileSizeValidator,
+  FileTypeValidator,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiTags,
   ApiOperation,
@@ -17,6 +23,7 @@ import {
   ApiBearerAuth,
   ApiParam,
   ApiBody,
+  ApiConsumes,
   ApiBadRequestResponse,
   ApiNotFoundResponse,
   ApiUnauthorizedResponse,
@@ -32,10 +39,13 @@ import {
   AddPropertyImageDto,
 } from '@application/property/use-cases/add-property-image.use-case';
 import { DeletePropertyImageUseCase } from '@application/property/use-cases/delete-property-image.use-case';
+import { UploadPropertyImageUseCase } from '@application/property/use-cases/upload-property-image.use-case';
+import { AiSearchPropertiesUseCase } from '@application/property/use-cases/ai-search-properties.use-case';
 
 import { CreatePropertyDto } from '@application/property/dto/create-property.dto';
 import { UpdatePropertyDto } from '@application/property/dto/update-property.dto';
 import { FilterPropertiesDto } from '@application/property/dto/filter-properties.dto';
+import { AiSearchDto } from '@application/property/dto/ai-search.dto';
 
 import { Auth, GetUser } from '@interface/http/common';
 import { Role } from '@domain/user/value-objects/role.vo';
@@ -52,7 +62,44 @@ export class PropertiesController {
     private readonly deletePropertyUseCase: DeletePropertyUseCase,
     private readonly addPropertyImageUseCase: AddPropertyImageUseCase,
     private readonly deletePropertyImageUseCase: DeletePropertyImageUseCase,
+    private readonly uploadPropertyImageUseCase: UploadPropertyImageUseCase,
+    private readonly aiSearchPropertiesUseCase: AiSearchPropertiesUseCase,
   ) {}
+
+  // ── AI Search ──────────────────────────────────────────────────────
+
+  @Post('ai-search')
+  @ApiOperation({
+    summary: 'Search properties with natural language (AI-powered)',
+    description:
+      'Accepts a natural language query (e.g. "apartamento en Las Mercedes, 2 cuartos, menos de 100mil") and uses OpenAI to parse it into structured filters. Returns matching properties plus the parsed filters for transparency.',
+  })
+  @ApiBody({ type: AiSearchDto })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'AI-parsed search results',
+    schema: {
+      example: {
+        originalQuery: 'apartamento en Las Mercedes, 2 cuartos, menos de 100mil dólares',
+        parsedFilters: {
+          propertyType: 'APARTMENT',
+          neighborhoodId: 'uuid',
+          bedrooms: 2,
+          maxPrice: 100000,
+          currency: 'USD',
+          transactionType: 'SALE',
+        },
+        data: [],
+        total: 0,
+        page: 1,
+        limit: 20,
+        totalPages: 0,
+      },
+    },
+  })
+  aiSearch(@Body() aiSearchDto: AiSearchDto) {
+    return this.aiSearchPropertiesUseCase.execute(aiSearchDto);
+  }
 
   // ── Properties CRUD ─────────────────────────────────────────────────
 
@@ -148,8 +195,13 @@ export class PropertiesController {
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updatePropertyDto: UpdatePropertyDto,
+    @GetUser() user: User,
   ) {
-    return this.updatePropertyUseCase.execute(id, updatePropertyDto);
+    return this.updatePropertyUseCase.execute(
+      id,
+      updatePropertyDto,
+      user.organizationId,
+    );
   }
 
   @Delete(':id')
@@ -174,8 +226,11 @@ export class PropertiesController {
   })
   @ApiNotFoundResponse({ description: 'Property not found' })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
-  remove(@Param('id', ParseUUIDPipe) id: string) {
-    return this.deletePropertyUseCase.execute(id);
+  remove(
+    @Param('id', ParseUUIDPipe) id: string,
+    @GetUser() user: User,
+  ) {
+    return this.deletePropertyUseCase.execute(id, user.organizationId);
   }
 
   // ── Property Images ─────────────────────────────────────────────────
@@ -218,8 +273,72 @@ export class PropertiesController {
   addImage(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() imageDto: AddPropertyImageDto,
+    @GetUser() user: User,
   ) {
-    return this.addPropertyImageUseCase.execute(id, imageDto);
+    return this.addPropertyImageUseCase.execute(
+      id,
+      imageDto,
+      user.organizationId,
+    );
+  }
+
+  @Post(':id/images/upload')
+  @Auth(Role.ADMIN, Role.USER)
+  @ApiBearerAuth()
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({
+    summary: 'Upload an image file for a property',
+    description:
+      'Uploads an image file directly to S3 and creates the property_image record automatically. Max 5MB. Supported formats: jpg, png, webp, gif.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Property UUID',
+    type: String,
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'Image file (max 5MB, jpg/png/webp/gif)',
+        },
+        altText: { type: 'string', description: 'Alternative text for the image' },
+        order: { type: 'number', description: 'Display order' },
+        isPrimary: { type: 'boolean', description: 'Set as primary image' },
+      },
+      required: ['file'],
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'Image uploaded and linked to property',
+  })
+  @ApiNotFoundResponse({ description: 'Property not found' })
+  @ApiBadRequestResponse({ description: 'Invalid file type or size' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  uploadImage(
+    @Param('id', ParseUUIDPipe) id: string,
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 5 * 1024 * 1024 }),
+          new FileTypeValidator({ fileType: /^image\/(jpeg|jpg|png|webp|gif)$/ }),
+        ],
+      }),
+    )
+    file: Express.Multer.File,
+    @Body() body: { altText?: string; order?: string; isPrimary?: string },
+    @GetUser() user: User,
+  ) {
+    return this.uploadPropertyImageUseCase.execute(id, file, user.organizationId, {
+      altText: body.altText,
+      order: body.order ? parseInt(body.order, 10) : undefined,
+      isPrimary: body.isPrimary === 'true',
+    });
   }
 
   @Delete('images/:imageId')
@@ -244,7 +363,13 @@ export class PropertiesController {
   })
   @ApiNotFoundResponse({ description: 'Image not found' })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
-  removeImage(@Param('imageId', ParseUUIDPipe) imageId: string) {
-    return this.deletePropertyImageUseCase.execute(imageId);
+  removeImage(
+    @Param('imageId', ParseUUIDPipe) imageId: string,
+    @GetUser() user: User,
+  ) {
+    return this.deletePropertyImageUseCase.execute(
+      imageId,
+      user.organizationId,
+    );
   }
 }

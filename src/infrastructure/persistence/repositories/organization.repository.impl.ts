@@ -21,9 +21,20 @@ export class DrizzleOrganizationRepository implements OrganizationRepository {
       .insert(organizations)
       .values({
         name: organizationData.name,
+        slug: organizationData.slug,
         email: organizationData.email,
         phone: organizationData.phone || null,
         address: organizationData.address || null,
+        logo: organizationData.logo || null,
+        description: organizationData.description || null,
+        website: organizationData.website || null,
+        whatsapp: organizationData.whatsapp || null,
+        instagram: organizationData.instagram || null,
+        facebook: organizationData.facebook || null,
+        primaryColor: organizationData.primaryColor || null,
+        secondaryColor: organizationData.secondaryColor || null,
+        timezone: organizationData.timezone || null,
+        defaultCurrency: organizationData.defaultCurrency || null,
         isActive: organizationData.isActive,
         deleted: organizationData.deleted,
       })
@@ -52,6 +63,17 @@ export class DrizzleOrganizationRepository implements OrganizationRepository {
     return organization ? OrganizationMapper.toDomain(organization) : null;
   }
 
+  async findBySlug(slug: string): Promise<Organization | null> {
+    const [organization] = await this.drizzle.db
+      .select()
+      .from(organizations)
+      .where(
+        and(eq(organizations.slug, slug), eq(organizations.deleted, false)),
+      );
+
+    return organization ? OrganizationMapper.toDomain(organization) : null;
+  }
+
   async findAll(): Promise<Organization[]> {
     const organizationList = await this.drizzle.db
       .select()
@@ -69,12 +91,34 @@ export class DrizzleOrganizationRepository implements OrganizationRepository {
 
     if (organizationData.name !== undefined)
       updateData.name = organizationData.name;
+    if (organizationData.slug !== undefined)
+      updateData.slug = organizationData.slug;
     if (organizationData.email !== undefined)
       updateData.email = organizationData.email;
     if (organizationData.phone !== undefined)
       updateData.phone = organizationData.phone;
     if (organizationData.address !== undefined)
       updateData.address = organizationData.address;
+    if (organizationData.logo !== undefined)
+      updateData.logo = organizationData.logo;
+    if (organizationData.description !== undefined)
+      updateData.description = organizationData.description;
+    if (organizationData.website !== undefined)
+      updateData.website = organizationData.website;
+    if (organizationData.whatsapp !== undefined)
+      updateData.whatsapp = organizationData.whatsapp;
+    if (organizationData.instagram !== undefined)
+      updateData.instagram = organizationData.instagram;
+    if (organizationData.facebook !== undefined)
+      updateData.facebook = organizationData.facebook;
+    if (organizationData.primaryColor !== undefined)
+      updateData.primaryColor = organizationData.primaryColor;
+    if (organizationData.secondaryColor !== undefined)
+      updateData.secondaryColor = organizationData.secondaryColor;
+    if (organizationData.timezone !== undefined)
+      updateData.timezone = organizationData.timezone;
+    if (organizationData.defaultCurrency !== undefined)
+      updateData.defaultCurrency = organizationData.defaultCurrency;
     if (organizationData.isActive !== undefined)
       updateData.isActive = organizationData.isActive;
 

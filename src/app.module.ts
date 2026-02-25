@@ -14,6 +14,7 @@ import { SeedModule } from './interface/http/seed/seed.module';
 import { OrganizationsModule } from './interface/http/organizations/organizations.module';
 import { PropertiesModule } from './interface/http/properties/properties.module';
 import { LocationsModule } from './interface/http/locations/locations.module';
+import { FilesModule } from './interface/http/files/files.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { LocationsModule } from './interface/http/locations/locations.module';
     OrganizationsModule,
     LocationsModule,
     PropertiesModule,
+    FilesModule,
   ],
 })
 export class AppModule {}

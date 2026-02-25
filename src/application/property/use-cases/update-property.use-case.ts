@@ -1,4 +1,9 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import {
   PropertyRepository,
   PROPERTY_REPOSITORY,
@@ -19,13 +24,23 @@ export class UpdatePropertyUseCase {
     private readonly propertyPriceRepository: PropertyPriceRepository,
   ) {}
 
-  async execute(id: string, updatePropertyDto: UpdatePropertyDto) {
+  async execute(
+    id: string,
+    updatePropertyDto: UpdatePropertyDto,
+    organizationId: string,
+  ) {
     try {
       const property = await this.propertyRepository.findById(id);
 
       if (!property) {
         throw new NotFoundException(
           `Property with identifier '${id}' not found`,
+        );
+      }
+
+      if (property.organizationId !== organizationId) {
+        throw new ForbiddenException(
+          'You do not have permission to update this property',
         );
       }
 

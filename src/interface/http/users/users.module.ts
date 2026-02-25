@@ -10,12 +10,15 @@ import { UsersController } from './users.controller';
 import { CreateUserUseCase } from '@application/user/use-cases/create-user.use-case';
 import { LoginUserUseCase } from '@application/user/use-cases/login-user.use-case';
 import { CheckAuthStatusUseCase } from '@application/user/use-cases/check-auth-status.use-case';
+import { UpdateProfileUseCase } from '@application/user/use-cases/update-profile.use-case';
+import { ChangePasswordUseCase } from '@application/user/use-cases/change-password.use-case';
 
 // Infrastructure
 import { DrizzleModule } from '@infrastructure/persistence/drizzle/drizzle.module';
 import { DrizzleUserRepository } from '@infrastructure/persistence/repositories/user.repository.impl';
 import { BcryptService } from '@infrastructure/auth/bcrypt/bcrypt.service';
 import { JwtStrategy } from '@infrastructure/auth/jwt/jwt.strategy';
+import { S3Module } from '@infrastructure/storage/s3/s3.module';
 
 // Domain
 import { USER_REPOSITORY } from '@domain/user/repositories/user.repository';
@@ -27,6 +30,7 @@ import { UserRoleGuard } from '@interface/http/common';
   imports: [
     ConfigModule,
     DrizzleModule,
+    S3Module,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -43,6 +47,8 @@ import { UserRoleGuard } from '@interface/http/common';
     CreateUserUseCase,
     LoginUserUseCase,
     CheckAuthStatusUseCase,
+    UpdateProfileUseCase,
+    ChangePasswordUseCase,
 
     // Infrastructure Services
     BcryptService,

@@ -9,6 +9,7 @@ import {
   OrganizationRepository,
   ORGANIZATION_REPOSITORY,
 } from '@domain/organization/repositories/organization.repository';
+import { Organization } from '@domain/organization/entities/organization.entity';
 import { Role } from '@domain/user/value-objects/role.vo';
 import { DatabaseErrorHandler } from '@infrastructure/errors/database-error.handler';
 
@@ -139,6 +140,7 @@ export class SeedUsersUseCase {
     for (const orgData of initialOrganizations) {
       const organization = await this.organizationRepository.create({
         ...orgData,
+        slug: Organization.generateSlug(orgData.name),
         isActive: true,
         deleted: false,
       });
