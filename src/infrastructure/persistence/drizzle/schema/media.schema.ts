@@ -26,6 +26,7 @@ export const mediaRoleEnum = pgEnum('media_role', [
   'GALLERY',
   'BROCHURE',
   'FLOOR_PLAN',
+  'RENDER',
   'LOGO',
   'AVATAR',
 ]);

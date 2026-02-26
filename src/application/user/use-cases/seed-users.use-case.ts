@@ -30,6 +30,10 @@ import {
   PROJECT_REPOSITORY,
 } from '@domain/project/repositories/project.repository';
 import {
+  UnitRepository,
+  UNIT_REPOSITORY,
+} from '@domain/unit/repositories/unit.repository';
+import {
   MediaRepository,
   MEDIA_REPOSITORY,
 } from '@domain/media/repositories/media.repository';
@@ -38,15 +42,25 @@ import { Role } from '@domain/user/value-objects/role.vo';
 import { ProjectStatus } from '@domain/project/value-objects/project-status.vo';
 import { ProjectVisibility } from '@domain/project/value-objects/project-visibility.vo';
 import { ProjectAmenity } from '@domain/project/value-objects/project-amenity.vo';
+import { UnitStatus } from '@domain/unit/value-objects/unit-status.vo';
+import { UnitType } from '@domain/unit/value-objects/unit-type.vo';
+import { Orientation } from '@domain/unit/value-objects/orientation.vo';
+import { UnitAttributes } from '@domain/unit/value-objects/unit-attributes.vo';
 import { EntityType } from '@domain/media/value-objects/entity-type.vo';
 import { MediaType } from '@domain/media/value-objects/media-type.vo';
 import { MediaRole } from '@domain/media/value-objects/media-role.vo';
 import { DatabaseErrorHandler } from '@infrastructure/errors/database-error.handler';
 import { DrizzleService } from '@infrastructure/persistence/drizzle/drizzle.service';
 import { media } from '@infrastructure/persistence/drizzle/schema/media.schema';
+import { units } from '@infrastructure/persistence/drizzle/schema/unit.schema';
+import { unitPriceHistory } from '@infrastructure/persistence/drizzle/schema/unit-price-history.schema';
 import { projects } from '@infrastructure/persistence/drizzle/schema/project.schema';
 import { developers } from '@infrastructure/persistence/drizzle/schema/developer.schema';
 import { neighborhoods } from '@infrastructure/persistence/drizzle/schema/neighborhood.schema';
+import { organizations } from '@infrastructure/persistence/drizzle/schema/organization.schema';
+import { countries } from '@infrastructure/persistence/drizzle/schema/country.schema';
+import { cities } from '@infrastructure/persistence/drizzle/schema/city.schema';
+import { users } from '@infrastructure/persistence/drizzle/schema/user.schema';
 
 const SEED_ORGANIZATIONS = [
   {
@@ -169,6 +183,174 @@ const SEED_PROJECTS = [
   },
 ];
 
+interface SeedUnit {
+  identifier: string;
+  type: UnitType;
+  priceUSD: number;
+  commissionPctOverride: number | null;
+  attributes: UnitAttributes;
+}
+
+const SEED_UNITS: Record<string, SeedUnit[]> = {
+  'Edificio Vitrubio': [
+    {
+      identifier: 'Apto 301',
+      type: UnitType.APARTMENT,
+      priceUSD: 125000,
+      commissionPctOverride: null,
+      attributes: {
+        type: 'APARTMENT',
+        floor: 3,
+        sqm: 85.5,
+        sqmUsable: 72.0,
+        bedrooms: 2,
+        bathrooms: 2,
+        halfBathrooms: 1,
+        orientation: Orientation.NORTH,
+        hasBalcony: true,
+        hasLaundryRoom: false,
+        hasServantRoom: false,
+      },
+    },
+    {
+      identifier: 'Apto 501',
+      type: UnitType.APARTMENT,
+      priceUSD: 155000,
+      commissionPctOverride: 3.5,
+      attributes: {
+        type: 'APARTMENT',
+        floor: 5,
+        sqm: 120.0,
+        sqmUsable: 105.0,
+        bedrooms: 3,
+        bathrooms: 2,
+        halfBathrooms: 1,
+        orientation: Orientation.NORTHEAST,
+        hasBalcony: true,
+        hasLaundryRoom: true,
+        hasServantRoom: true,
+      },
+    },
+    {
+      identifier: 'E-04',
+      type: UnitType.PARKING,
+      priceUSD: 15000,
+      commissionPctOverride: null,
+      attributes: {
+        type: 'PARKING',
+        level: 'S1',
+        spotNumber: 'E-04',
+        isCovered: true,
+        sqm: 12.5,
+      },
+    },
+    {
+      identifier: 'D-02',
+      type: UnitType.STORAGE,
+      priceUSD: 8000,
+      commissionPctOverride: null,
+      attributes: {
+        type: 'STORAGE',
+        level: 'S2',
+        sqm: 4.0,
+      },
+    },
+  ],
+  'Condominio Los Jardines': [
+    {
+      identifier: 'Casa 1A',
+      type: UnitType.APARTMENT,
+      priceUSD: 95000,
+      commissionPctOverride: null,
+      attributes: {
+        type: 'APARTMENT',
+        floor: 1,
+        sqm: 110.0,
+        sqmUsable: 98.0,
+        bedrooms: 3,
+        bathrooms: 2,
+        halfBathrooms: 0,
+        orientation: Orientation.EAST,
+        hasBalcony: false,
+        hasLaundryRoom: true,
+        hasServantRoom: false,
+      },
+    },
+    {
+      identifier: 'P-01',
+      type: UnitType.PARKING,
+      priceUSD: 12000,
+      commissionPctOverride: null,
+      attributes: {
+        type: 'PARKING',
+        level: 'PB',
+        spotNumber: 'P-01',
+        isCovered: false,
+        sqm: 15.0,
+      },
+    },
+  ],
+  'Torre Milenio': [
+    {
+      identifier: 'Oficina 8A',
+      type: UnitType.OFFICE,
+      priceUSD: 180000,
+      commissionPctOverride: 2.5,
+      attributes: {
+        type: 'OFFICE',
+        floor: 8,
+        sqm: 65.0,
+        sqmUsable: 58.0,
+        bedrooms: null,
+        bathrooms: 1,
+        halfBathrooms: 1,
+        orientation: Orientation.WEST,
+        hasBalcony: false,
+        hasLaundryRoom: false,
+        hasServantRoom: false,
+      },
+    },
+    {
+      identifier: 'Local C-01',
+      type: UnitType.COMMERCIAL,
+      priceUSD: 220000,
+      commissionPctOverride: null,
+      attributes: {
+        type: 'COMMERCIAL',
+        floor: 0,
+        sqm: 150.0,
+        sqmUsable: 140.0,
+        bedrooms: null,
+        bathrooms: 2,
+        halfBathrooms: 0,
+        orientation: null,
+        hasBalcony: false,
+        hasLaundryRoom: false,
+        hasServantRoom: false,
+      },
+    },
+    {
+      identifier: 'Apto 1201',
+      type: UnitType.APARTMENT,
+      priceUSD: 195000,
+      commissionPctOverride: null,
+      attributes: {
+        type: 'APARTMENT',
+        floor: 12,
+        sqm: 95.0,
+        sqmUsable: 82.0,
+        bedrooms: 2,
+        bathrooms: 2,
+        halfBathrooms: 0,
+        orientation: Orientation.SOUTH,
+        hasBalcony: true,
+        hasLaundryRoom: false,
+        hasServantRoom: false,
+      },
+    },
+  ],
+};
+
 const PLACEHOLDER_MEDIA = {
   cover: {
     url: 'https://picsum.photos/seed/cover/1200/800',
@@ -215,6 +397,8 @@ export class SeedUsersUseCase {
     private readonly developerRepository: DeveloperRepository,
     @Inject(PROJECT_REPOSITORY)
     private readonly projectRepository: ProjectRepository,
+    @Inject(UNIT_REPOSITORY)
+    private readonly unitRepository: UnitRepository,
     @Inject(MEDIA_REPOSITORY)
     private readonly mediaRepository: MediaRepository,
     private readonly drizzle: DrizzleService,
@@ -235,6 +419,8 @@ export class SeedUsersUseCase {
       const developer = await this.createDeveloper(organizationId);
       const createdProjects = await this.createProjects(developer.id, countries, cities, neighborhoodMap);
       await this.createProjectMedia(createdProjects);
+      const unitCount = await this.createUnits(createdProjects);
+      await this.createUnitMedia(createdProjects);
 
       console.log('[Seed] Seed process completed successfully!');
 
@@ -248,6 +434,7 @@ export class SeedUsersUseCase {
           neighborhoods: neighborhoodMap.size,
           developers: 1,
           projects: createdProjects.length,
+          units: unitCount,
         },
       };
     } catch (error) {
@@ -260,25 +447,15 @@ export class SeedUsersUseCase {
     console.log('[Seed] Deleting all data...');
 
     await this.drizzle.db.delete(media);
+    await this.drizzle.db.delete(unitPriceHistory);
+    await this.drizzle.db.delete(units);
     await this.drizzle.db.delete(projects);
     await this.drizzle.db.delete(developers);
-    await this.userRepository.deleteAll();
+    await this.drizzle.db.delete(users);
     await this.drizzle.db.delete(neighborhoods);
-
-    const allCities = await this.cityRepository.findAll();
-    for (const c of allCities) {
-      await this.cityRepository.delete(c.id);
-    }
-
-    const allCountries = await this.countryRepository.findAll();
-    for (const c of allCountries) {
-      await this.countryRepository.delete(c.id);
-    }
-
-    const allOrgs = await this.organizationRepository.findAll();
-    for (const org of allOrgs) {
-      await this.organizationRepository.delete(org.id);
-    }
+    await this.drizzle.db.delete(cities);
+    await this.drizzle.db.delete(countries);
+    await this.drizzle.db.delete(organizations);
 
     console.log('[Seed] All data deleted');
   }
@@ -467,6 +644,87 @@ export class SeedUsersUseCase {
       }
 
       console.log(`[Seed] Created media for: ${project.name}`);
+    }
+  }
+
+  private async createUnits(
+    projectList: { id: string; name: string }[],
+  ): Promise<number> {
+    console.log('[Seed] Creating units...');
+    let totalCreated = 0;
+
+    for (const project of projectList) {
+      const unitDefs = SEED_UNITS[project.name] ?? [];
+
+      for (const unitData of unitDefs) {
+        await this.unitRepository.create({
+          projectId: project.id,
+          identifier: unitData.identifier,
+          type: unitData.type,
+          status: UnitStatus.AVAILABLE,
+          priceUSD: unitData.priceUSD,
+          commissionPctOverride: unitData.commissionPctOverride,
+          attributes: unitData.attributes,
+          internalNotes: null,
+        });
+        totalCreated++;
+        console.log(
+          `[Seed] Created unit: ${unitData.identifier} (${project.name})`,
+        );
+      }
+    }
+
+    return totalCreated;
+  }
+
+  private async createUnitMedia(
+    projectList: { id: string; name: string }[],
+  ) {
+    console.log('[Seed] Creating unit media...');
+
+    for (const project of projectList) {
+      const unitDefs = SEED_UNITS[project.name] ?? [];
+      const createdUnits = await this.unitRepository.findByProjectId(
+        project.id,
+        100,
+        0,
+      );
+
+      for (const unit of createdUnits.data) {
+        if (
+          unit.type === UnitType.APARTMENT ||
+          unit.type === UnitType.OFFICE ||
+          unit.type === UnitType.COMMERCIAL
+        ) {
+          await this.mediaRepository.create({
+            entityType: EntityType.UNIT,
+            entityId: unit.id,
+            mediaType: MediaType.IMAGE,
+            role: MediaRole.COVER,
+            url: `https://picsum.photos/seed/${unit.id}/800/600`,
+            key: `units/${unit.id}/cover/cover.jpg`,
+            filename: 'cover.jpg',
+            mimeType: 'image/jpeg',
+            size: 100000,
+            sortOrder: 0,
+          });
+
+          await this.mediaRepository.create({
+            entityType: EntityType.UNIT,
+            entityId: unit.id,
+            mediaType: MediaType.IMAGE,
+            role: MediaRole.FLOOR_PLAN,
+            url: `https://picsum.photos/seed/fp-${unit.id}/800/600`,
+            key: `units/${unit.id}/floor-plan/floor-plan.jpg`,
+            filename: 'floor-plan.jpg',
+            mimeType: 'image/jpeg',
+            size: 80000,
+            sortOrder: 0,
+          });
+
+          console.log(`[Seed] Created media for unit: ${unit.identifier}`);
+        }
+      }
     }
   }
 }

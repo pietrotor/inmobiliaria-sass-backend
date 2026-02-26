@@ -3,6 +3,7 @@ export enum MediaRole {
   GALLERY = 'GALLERY',
   BROCHURE = 'BROCHURE',
   FLOOR_PLAN = 'FLOOR_PLAN',
+  RENDER = 'RENDER',
   LOGO = 'LOGO',
   AVATAR = 'AVATAR',
 }

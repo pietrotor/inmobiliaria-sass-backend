@@ -5,4 +5,6 @@ export * from './city.schema';
 export * from './neighborhood.schema';
 export * from './developer.schema';
 export * from './project.schema';
+export * from './unit.schema';
+export * from './unit-price-history.schema';
 export * from './media.schema';

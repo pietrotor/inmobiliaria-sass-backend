@@ -9,6 +9,7 @@ import { OrganizationsModule } from '../organizations/organizations.module';
 import { LocationsModule } from '../locations/locations.module';
 import { DevelopersModule } from '../developers/developers.module';
 import { ProjectsModule } from '../projects/projects.module';
+import { UnitsModule } from '../units/units.module';
 import { MediaModule } from '../media/media.module';
 import { DrizzleModule } from '@infrastructure/persistence/drizzle/drizzle.module';
 
@@ -20,6 +21,7 @@ import { DrizzleModule } from '@infrastructure/persistence/drizzle/drizzle.modul
     LocationsModule,
     DevelopersModule,
     ProjectsModule,
+    UnitsModule,
     MediaModule,
   ],
   controllers: [SeedController],

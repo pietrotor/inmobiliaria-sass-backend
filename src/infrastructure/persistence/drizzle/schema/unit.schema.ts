@@ -1,0 +1,50 @@
+import {
+  pgTable,
+  uuid,
+  varchar,
+  real,
+  text,
+  timestamp,
+  pgEnum,
+  jsonb,
+} from 'drizzle-orm/pg-core';
+import { projects } from './project.schema';
+
+export const unitStatusEnum = pgEnum('unit_status', [
+  'AVAILABLE',
+  'WITH_INTEREST',
+  'RESERVED',
+  'SOLD',
+  'SUSPENDED',
+  'UNAVAILABLE',
+]);
+
+export const unitTypeEnum = pgEnum('unit_type', [
+  'APARTMENT',
+  'OFFICE',
+  'COMMERCIAL',
+  'PARKING',
+  'STORAGE',
+]);
+
+export const units = pgTable('unit', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  projectId: uuid('project_id')
+    .notNull()
+    .references(() => projects.id, { onDelete: 'cascade' }),
+  identifier: varchar('identifier', { length: 100 }).notNull(),
+  type: unitTypeEnum('type').notNull(),
+  status: unitStatusEnum('status').notNull().default('AVAILABLE'),
+  priceUSD: real('price_usd').notNull(),
+  commissionPctOverride: real('commission_pct_override'),
+  attributes: jsonb('attributes').notNull().default({}),
+  internalNotes: text('internal_notes'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at')
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+});
+
+export type UnitSchema = typeof units.$inferSelect;
+export type NewUnitSchema = typeof units.$inferInsert;

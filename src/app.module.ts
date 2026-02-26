@@ -16,6 +16,7 @@ import { LocationsModule } from './interface/http/locations/locations.module';
 import { DevelopersModule } from './interface/http/developers/developers.module';
 import { ProjectsModule } from './interface/http/projects/projects.module';
 import { FilesModule } from './interface/http/files/files.module';
+import { UnitsModule } from './interface/http/units/units.module';
 import { MediaModule } from './interface/http/media/media.module';
 
 @Module({
@@ -38,6 +39,7 @@ import { MediaModule } from './interface/http/media/media.module';
     DevelopersModule,
     ProjectsModule,
     FilesModule,
+    UnitsModule,
     MediaModule,
   ],
 })
