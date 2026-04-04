@@ -1,12 +1,15 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsEmail,
+  IsEnum,
+  IsOptional,
   IsString,
   IsUUID,
   Matches,
   MaxLength,
   MinLength,
 } from 'class-validator';
+import { UserRole } from '@domain/user/value-objects/role.vo';
 
 export class CreateUserDto {
   @ApiProperty({ example: 'john.doe@example.com' })
@@ -42,4 +45,9 @@ export class CreateUserDto {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
   @IsUUID()
   organizationId: string;
+
+  @ApiPropertyOptional({ enum: UserRole, default: UserRole.DEVELOPER_SALES })
+  @IsOptional()
+  @IsEnum(UserRole)
+  role?: UserRole;
 }

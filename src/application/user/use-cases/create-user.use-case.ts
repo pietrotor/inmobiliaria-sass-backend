@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 
 import { UserRepository, USER_REPOSITORY } from '@domain/user/repositories/user.repository';
-import { Role } from '@domain/user/value-objects/role.vo';
+import { UserRole } from '@domain/user/value-objects/role.vo';
 import { BcryptService } from '@infrastructure/auth/bcrypt/bcrypt.service';
 import { DatabaseErrorHandler } from '@infrastructure/errors/database-error.handler';
 import { CreateUserDto } from '../dto/create-user.dto';
@@ -26,7 +26,7 @@ export class CreateUserUseCase {
         email: dto.email,
         phoneNumber: dto.phoneNumber,
         password: hashedPassword,
-        roles: [Role.USER],
+        role: dto.role ?? UserRole.DEVELOPER_SALES,
         organizationId: dto.organizationId,
         isActive: true,
         deleted: false,

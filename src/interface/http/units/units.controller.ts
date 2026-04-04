@@ -36,11 +36,11 @@ import { GetUnitUseCase } from '@application/unit/use-cases/get-unit.use-case';
 import { GetUnitsByProjectUseCase } from '@application/unit/use-cases/get-units-by-project.use-case';
 import { UpdateUnitUseCase } from '@application/unit/use-cases/update-unit.use-case';
 import { ChangeUnitStatusUseCase } from '@application/unit/use-cases/change-unit-status.use-case';
-import { UpdateUnitPriceUseCase } from '@application/unit/use-cases/update-unit-price.use-case';
 import { GetUnitPriceHistoryUseCase } from '@application/unit/use-cases/get-unit-price-history.use-case';
 import { DeleteUnitUseCase } from '@application/unit/use-cases/delete-unit.use-case';
 import { UploadUnitMediaUseCase } from '@application/unit/use-cases/upload-unit-media.use-case';
 import { DeleteUnitMediaUseCase } from '@application/unit/use-cases/delete-unit-media.use-case';
+import { UpdateUnitPriceUseCase } from '@application/unit/use-cases/update-unit-price.use-case';
 
 import { CreateUnitDto } from '@application/unit/dto/create-unit.dto';
 import { UpdateUnitDto } from '@application/unit/dto/update-unit.dto';
@@ -54,7 +54,7 @@ import { UnitFilterDto } from '@application/unit/dto/unit-filter.dto';
 import { MessageResponseDto } from '@application/project/dto/project-response.dto';
 
 import { Auth, GetUser } from '@interface/http/common';
-import { Role } from '@domain/user/value-objects/role.vo';
+import { UserRole } from '@domain/user/value-objects/role.vo';
 import { User } from '@domain/user/entities/user.entity';
 import { UnitStatus } from '@domain/unit/value-objects/unit-status.vo';
 import { MediaRole } from '@domain/media/value-objects/media-role.vo';
@@ -70,15 +70,15 @@ export class UnitsController {
     private readonly getUnitsByProjectUseCase: GetUnitsByProjectUseCase,
     private readonly updateUnitUseCase: UpdateUnitUseCase,
     private readonly changeUnitStatusUseCase: ChangeUnitStatusUseCase,
-    private readonly updateUnitPriceUseCase: UpdateUnitPriceUseCase,
     private readonly getUnitPriceHistoryUseCase: GetUnitPriceHistoryUseCase,
     private readonly deleteUnitUseCase: DeleteUnitUseCase,
     private readonly uploadUnitMediaUseCase: UploadUnitMediaUseCase,
     private readonly deleteUnitMediaUseCase: DeleteUnitMediaUseCase,
+    private readonly updateUnitPriceUseCase: UpdateUnitPriceUseCase,
   ) {}
 
   @Post()
-  @Auth(Role.ADMIN, Role.SUPER_USER)
+  @Auth(UserRole.DEVELOPER_ADMIN, UserRole.SUPER_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a new unit in a project' })
   @ApiParam({ name: 'projectId', type: String })
@@ -104,7 +104,7 @@ export class UnitsController {
   }
 
   @Get()
-  @Auth(Role.ADMIN, Role.SUPER_USER)
+  @Auth(UserRole.DEVELOPER_ADMIN, UserRole.SUPER_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all units for a project with optional filters' })
   @ApiParam({ name: 'projectId', type: String })
@@ -131,7 +131,7 @@ export class UnitsController {
   }
 
   @Get(':unitId')
-  @Auth(Role.ADMIN, Role.SUPER_USER)
+  @Auth(UserRole.DEVELOPER_ADMIN, UserRole.SUPER_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get unit by ID' })
   @ApiParam({ name: 'projectId', type: String })
@@ -156,7 +156,7 @@ export class UnitsController {
   }
 
   @Put(':unitId')
-  @Auth(Role.ADMIN, Role.SUPER_USER)
+  @Auth(UserRole.DEVELOPER_ADMIN, UserRole.SUPER_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update unit' })
   @ApiParam({ name: 'projectId', type: String })
@@ -178,6 +178,7 @@ export class UnitsController {
   ) {
     return this.updateUnitUseCase.execute(
       user.organizationId,
+      user.id,
       projectId,
       unitId,
       dto,
@@ -185,7 +186,7 @@ export class UnitsController {
   }
 
   @Patch(':unitId/status/:status')
-  @Auth(Role.ADMIN, Role.SUPER_USER)
+  @Auth(UserRole.DEVELOPER_ADMIN, UserRole.SUPER_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Change unit status' })
   @ApiParam({ name: 'projectId', type: String })
@@ -213,37 +214,8 @@ export class UnitsController {
     );
   }
 
-  @Patch(':unitId/price')
-  @Auth(Role.ADMIN, Role.SUPER_USER)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update unit price with history tracking' })
-  @ApiParam({ name: 'projectId', type: String })
-  @ApiParam({ name: 'unitId', type: String })
-  @ApiBody({ type: UpdateUnitPriceDto })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    type: UnitResponseDto,
-  })
-  @ApiNotFoundResponse({ description: 'Unit not found' })
-  @ApiForbiddenResponse({ description: 'You do not have access to this project' })
-  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
-  updatePrice(
-    @GetUser() user: User,
-    @Param('projectId', ParseUUIDPipe) projectId: string,
-    @Param('unitId', ParseUUIDPipe) unitId: string,
-    @Body() dto: UpdateUnitPriceDto,
-  ) {
-    return this.updateUnitPriceUseCase.execute(
-      user.organizationId,
-      user.id,
-      projectId,
-      unitId,
-      dto,
-    );
-  }
-
   @Get(':unitId/price-history')
-  @Auth(Role.ADMIN, Role.SUPER_USER)
+  @Auth(UserRole.DEVELOPER_ADMIN, UserRole.SUPER_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get unit price change history' })
   @ApiParam({ name: 'projectId', type: String })
@@ -267,8 +239,38 @@ export class UnitsController {
     );
   }
 
+  @Patch(':unitId/price')
+  @Auth(UserRole.DEVELOPER_ADMIN, UserRole.SUPER_ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update unit price with history tracking' })
+  @ApiParam({ name: 'projectId', type: String })
+  @ApiParam({ name: 'unitId', type: String })
+  @ApiBody({ type: UpdateUnitPriceDto })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    type: UnitResponseDto,
+  })
+  @ApiNotFoundResponse({ description: 'Unit not found' })
+  @ApiForbiddenResponse({ description: 'You do not have access to this project' })
+  @ApiBadRequestResponse({ description: 'Invalid input data' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  updatePrice(
+    @GetUser() user: User,
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+    @Param('unitId', ParseUUIDPipe) unitId: string,
+    @Body() dto: UpdateUnitPriceDto,
+  ) {
+    return this.updateUnitPriceUseCase.execute(
+      user.organizationId,
+      user.id,
+      projectId,
+      unitId,
+      dto,
+    );
+  }
+
   @Post(':unitId/media')
-  @Auth(Role.ADMIN, Role.SUPER_USER)
+  @Auth(UserRole.DEVELOPER_ADMIN, UserRole.SUPER_ADMIN)
   @ApiBearerAuth()
   @UseInterceptors(FileInterceptor('file'))
   @ApiConsumes('multipart/form-data')
@@ -326,7 +328,7 @@ export class UnitsController {
   }
 
   @Delete(':unitId/media/:mediaId')
-  @Auth(Role.ADMIN, Role.SUPER_USER)
+  @Auth(UserRole.DEVELOPER_ADMIN, UserRole.SUPER_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete a media file from a unit' })
   @ApiParam({ name: 'projectId', type: String })
@@ -354,7 +356,7 @@ export class UnitsController {
   }
 
   @Delete(':unitId')
-  @Auth(Role.ADMIN, Role.SUPER_USER)
+  @Auth(UserRole.DEVELOPER_ADMIN, UserRole.SUPER_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete unit' })
   @ApiParam({ name: 'projectId', type: String })

@@ -88,7 +88,7 @@ export class UpdateUnitPriceUseCase {
         previousPriceUSD: unit.priceUSD,
         newPriceUSD: dto.newPriceUSD,
         changedByUserId: userId,
-        reason: dto.reason,
+        reason: dto.reason ?? 'Price updated',
       });
 
       const updated = await this.unitRepository.update(unitId, {

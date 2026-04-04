@@ -30,7 +30,7 @@ import { CreateDeveloperDto } from '@application/developer/dto/create-developer.
 import { UpdateDeveloperDto } from '@application/developer/dto/update-developer.dto';
 import { DeveloperResponseDto } from '@application/developer/dto/developer-response.dto';
 import { Auth } from '@interface/http/common';
-import { Role } from '@domain/user/value-objects/role.vo';
+import { UserRole } from '@domain/user/value-objects/role.vo';
 
 @ApiTags('Developers')
 @Controller('developers')
@@ -44,7 +44,7 @@ export class DevelopersController {
   ) {}
 
   @Post()
-  @Auth(Role.ADMIN, Role.SUPER_USER)
+  @Auth(UserRole.DEVELOPER_ADMIN, UserRole.SUPER_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a developer profile' })
   @ApiBody({ type: CreateDeveloperDto })
@@ -96,7 +96,7 @@ export class DevelopersController {
   }
 
   @Put(':id')
-  @Auth(Role.ADMIN, Role.SUPER_USER)
+  @Auth(UserRole.DEVELOPER_ADMIN, UserRole.SUPER_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update developer profile' })
   @ApiParam({ name: 'id', type: String })
@@ -117,7 +117,7 @@ export class DevelopersController {
   }
 
   @Delete(':id')
-  @Auth(Role.ADMIN, Role.SUPER_USER)
+  @Auth(UserRole.DEVELOPER_ADMIN, UserRole.SUPER_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete developer profile' })
   @ApiParam({ name: 'id', type: String })

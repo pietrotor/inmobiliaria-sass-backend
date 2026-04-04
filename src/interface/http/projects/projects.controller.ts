@@ -49,7 +49,7 @@ import {
 } from '@application/project/dto/project-response.dto';
 import { PaginationDto } from '@application/common/dto/pagination.dto';
 import { Auth, GetUser } from '@interface/http/common';
-import { Role } from '@domain/user/value-objects/role.vo';
+import { UserRole } from '@domain/user/value-objects/role.vo';
 import { User } from '@domain/user/entities/user.entity';
 import { MediaRole } from '@domain/media/value-objects/media-role.vo';
 import { ProjectStatus } from '@domain/project/value-objects/project-status.vo';
@@ -72,7 +72,7 @@ export class ProjectsController {
   ) {}
 
   @Post()
-  @Auth(Role.ADMIN, Role.SUPER_USER)
+  @Auth(UserRole.DEVELOPER_ADMIN, UserRole.SUPER_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a new project' })
   @ApiBody({ type: CreateProjectDto })
@@ -99,7 +99,7 @@ export class ProjectsController {
   }
 
   @Get()
-  @Auth(Role.ADMIN, Role.SUPER_USER)
+  @Auth(UserRole.DEVELOPER_ADMIN, UserRole.SUPER_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get projects for the authenticated developer' })
   @ApiResponse({
@@ -116,7 +116,7 @@ export class ProjectsController {
   }
 
   @Get(':id')
-  @Auth(Role.ADMIN, Role.SUPER_USER)
+  @Auth(UserRole.DEVELOPER_ADMIN, UserRole.SUPER_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get project by ID' })
   @ApiParam({ name: 'id', type: String })
@@ -136,7 +136,7 @@ export class ProjectsController {
   }
 
   @Put(':id')
-  @Auth(Role.ADMIN, Role.SUPER_USER)
+  @Auth(UserRole.DEVELOPER_ADMIN, UserRole.SUPER_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update project' })
   @ApiParam({ name: 'id', type: String })
@@ -159,7 +159,7 @@ export class ProjectsController {
   }
 
   @Post(':id/media')
-  @Auth(Role.ADMIN, Role.SUPER_USER)
+  @Auth(UserRole.DEVELOPER_ADMIN, UserRole.SUPER_ADMIN)
   @ApiBearerAuth()
   @UseInterceptors(FileInterceptor('file'))
   @ApiConsumes('multipart/form-data')
@@ -215,7 +215,7 @@ export class ProjectsController {
   }
 
   @Delete(':id/media/:mediaId')
-  @Auth(Role.ADMIN, Role.SUPER_USER)
+  @Auth(UserRole.DEVELOPER_ADMIN, UserRole.SUPER_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete a media file from a project' })
   @ApiParam({ name: 'id', type: String })
@@ -241,7 +241,7 @@ export class ProjectsController {
   }
 
   @Patch(':id/status/:status')
-  @Auth(Role.ADMIN, Role.SUPER_USER)
+  @Auth(UserRole.DEVELOPER_ADMIN, UserRole.SUPER_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Change project status (PUBLISHED, PAUSED, CLOSED)' })
   @ApiParam({ name: 'id', type: String })
@@ -268,7 +268,7 @@ export class ProjectsController {
   }
 
   @Delete(':id')
-  @Auth(Role.ADMIN, Role.SUPER_USER)
+  @Auth(UserRole.DEVELOPER_ADMIN, UserRole.SUPER_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete project' })
   @ApiParam({ name: 'id', type: String })

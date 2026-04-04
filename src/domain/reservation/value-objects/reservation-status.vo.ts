@@ -1,0 +1,7 @@
+export enum ReservationStatus {
+  RESERVED = 'RESERVED',
+  AGREEMENT_SIGNED = 'AGREEMENT_SIGNED',
+  IN_PROCESS = 'IN_PROCESS',
+  DELIVERED = 'DELIVERED',
+  FALLEN = 'FALLEN',
+}

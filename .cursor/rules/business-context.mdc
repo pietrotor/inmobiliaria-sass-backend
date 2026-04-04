@@ -1,0 +1,610 @@
+---
+alwaysApply: true
+---
+
+# MLS Bolivia — MVP Business Specification
+
+> This document defines what the product does and how each part works at a business level.
+> It contains no technical or design decisions. It is the single source of truth for development.
+
+---
+
+## 1. What the product is
+
+A multi-tenant SaaS platform for Bolivian real estate developers (constructoras) that combines two things:
+
+1. **Internal Commercial CRM** — to manage clients who come directly to the developer (through the sales office, social media, referrals, etc.)
+2. **Broker Marketplace** — to allow independent external real estate brokers to access the developer's inventory, generate commercial proposals, and declare reservation interest on specific units.
+
+Both sides share the same real-time inventory. A unit reserved by a broker disappears from the internal CRM and vice versa. There are no separate inventories.
+
+The product is sold to developers as a management tool. Brokers access it for free or with a paid plan, but the primary paying customer is the developer.
+
+---
+
+## 2. System actors
+
+The system has four types of users with distinct responsibilities.
+
+### Super Admin
+
+The platform administrator — the team that operates the SaaS. There is only one at the platform level and they do not belong to any developer company.
+
+Can do:
+
+- Create and manage developer accounts
+- Activate or deactivate developer accounts
+- Approve or reject broker registration requests
+- Suspend brokers with abusive behavior
+- View global metrics across the entire platform
+
+Cannot see private client information from any developer.
+
+---
+
+### Developer Admin
+
+The commercial manager or sales director of a developer company. There can be more than one per developer.
+
+Can do:
+
+- Create, edit, and publish projects
+- Load and manage units for each project
+- View all direct leads of their developer
+- Assign leads to internal sales executives
+- View and manage all broker reservation intents
+- Approve or reject reservation intents
+- Manage which brokers have access to private projects
+- Mark commissions as paid
+- View the post-sale history of their projects
+
+---
+
+### Developer Sales (Internal Sales Executive)
+
+The developer's internal salesperson. Works under the Developer Admin.
+
+Can do:
+
+- View the project and unit inventory of their developer
+- Register new leads and manage the ones assigned to them
+- Advance the status of their leads through the pipeline
+- Generate commercial proposals for their clients
+- Record payments received from their assigned clients
+- View the post-sale status of units they sold
+
+Cannot:
+
+- Approve or reject broker intents
+- Change unit prices
+- View leads assigned to other executives — they only see their own and unassigned ones
+
+---
+
+### Broker (External Agent)
+
+An independent real estate agent who looks for projects to sell to their own clients. Not an employee of any developer.
+
+Can do:
+
+- View the public project catalog from all developers
+- View the detail of each project and its available units
+- Generate commercial proposals for their clients
+- Declare a reservation intent on a unit (PRO plan only)
+- View the status of their own intents
+- Join the waitlist for a unit that already has an active intent
+- View the status of their commissions
+
+Cannot:
+
+- View the direct leads of any developer
+- View internal notes on any unit
+- View other brokers' intents
+- Change any project or unit data
+
+**Broker plans:**
+
+- **FREE**: can view projects and generate commercial proposals. Cannot declare reservation intents.
+- **PRO**: everything in FREE plus declare reservation intents and join waitlists.
+
+**Account approval:** Brokers self-register on the platform but their account remains pending until the Super Admin manually approves it. An unapproved broker can do nothing beyond seeing a pending-approval screen.
+
+**Reputation:** Every broker has a visible counter of intent cancellations in the last 30 days. This number is visible to the Developer Admin when reviewing an intent. It does not trigger automatic blocks — it is purely informational for the developer to factor into their decision.
+
+---
+
+## 3. Module: Projects and Inventory
+
+This module is the foundation of everything. Without it, nothing else works.
+
+### Projects
+
+A developer can have multiple active projects at the same time. A project represents a complete building or real estate development (for example, "Edificio Vitrubio").
+
+Each project has:
+
+- Name, description, address, neighborhood, and city
+- Project status
+- Visibility (public or private)
+- Estimated delivery date
+- Total number of floors
+- List of building-level amenities (pool, gym, rooftop, BBQ area, coworking, lobby, 24h security, visitor parking, pet-friendly, smart home)
+- Project images and downloadable brochure
+- Base commission percentage for external brokers
+- Deadline in business hours that a broker has to advance after declaring an intent
+
+**Project statuses:**
+
+- **DRAFT**: the developer is still configuring it. Not visible to anyone external.
+- **PUBLISHED**: visible according to its visibility setting (public or private). Brokers and executives can see its units and generate proposals.
+- **PAUSED**: the project stops accepting new intents. Existing active intents are suspended — not cancelled — the countdown freezes. Units do not change status.
+- **CLOSED**: terminal status. No actions can be taken on the project. Active intents are automatically cancelled and units become unavailable.
+
+**Project visibility:**
+
+- **Public**: any registered and approved broker can see it and work with it.
+- **Private**: only brokers explicitly invited by the developer can see it. Others are unaware of its existence.
+
+---
+
+### Units
+
+A unit is any individual asset that can be sold within a project: apartments, offices, commercial spaces, parking spots, and storage rooms.
+
+Each unit has:
+
+- A human-readable identifier (e.g., "Apt 301", "E-04", "Shop 02")
+- Unit type
+- Current status
+- Price in US dollars
+- Own commission percentage (if different from the project base percentage)
+- Physical attributes specific to its type
+- Unit-specific images
+- Internal notes (visible only to the developer — never to brokers)
+
+**Unit types:**
+
+- Apartment
+- Office
+- Commercial space
+- Parking spot
+- Storage room
+
+**Unit statuses:**
+
+- **AVAILABLE**: no one has active interest. Can be quoted and reserved.
+- **WITH INTEREST**: there is exactly one active reservation intent on it. Only one, never two simultaneously.
+- **RESERVED**: an intent was approved. The unit is committed to a buyer.
+- **SOLD**: terminal status. The sale is fully closed.
+- **SUSPENDED**: temporarily withdrawn from the market by the developer's decision. Does not accept new intents.
+- **UNAVAILABLE**: terminal status. The unit is not for sale (own use, donation, etc.).
+
+**Critical rule:** At no point can there be two active intents on the same unit. The system must guarantee this without exception.
+
+**Price changes:** Every time a unit's price changes, the system records the previous price, the new price, who changed it, and why. This history is immutable and serves as evidence in case of disputes. If there is an active intent at the time of the price change, the broker receives a notification with the exact amount of the change. The intent is not automatically cancelled — the broker decides whether to continue or cancel.
+
+---
+
+## 4. Module: Commercial CRM (Direct Leads)
+
+This module manages clients who come to the developer through their own channels, without the involvement of an external broker.
+
+### Registering a lead
+
+When a client shows direct interest, the internal executive registers them as a lead with:
+
+- Full name
+- National ID (CI) — this is the key field for detecting duplicates with broker clients
+- Phone number
+- Email (optional)
+- How they arrived: walk-in at sales office, phone call, social media, referral, website, other
+- Units they are interested in
+- Initial notes
+
+The lead is assigned to an executive. The Developer Admin can reassign it to another executive at any time.
+
+### Lead pipeline
+
+A lead advances through these statuses in order:
+
+1. **NEW** — just registered, no contact yet
+2. **CONTACTED** — the executive has already communicated with them
+3. **VISITED** — the client visited the project or sales office physically
+4. **QUOTED** — a formal commercial proposal was generated for them
+5. **RESERVED** — they made the reservation payment
+6. **LOST** — no longer interested or chose another option
+
+A lead can move to LOST from any status. A lead in RESERVED status cannot go backwards.
+
+Every status change is recorded with date, time, and who made the change.
+
+### Commercial proposal for a direct lead
+
+The executive can generate a commercial proposal for their lead in the same way a broker does. The document includes the client's data, the selected unit, the price at the time of generation, and the generation date. This document can be shared directly via WhatsApp.
+
+The generation date and time is the official record that this client was attended by this executive for this unit.
+
+### Duplicate detection
+
+When a new lead is registered, the system compares their national ID against:
+
+- All existing leads for that developer
+- All clients mentioned in active or recent broker intents (last 90 days) for that developer
+
+If a match is found, the system shows a visible alert to the executive registering the lead and to the Developer Admin. The alert indicates who first registered the client and through which channel (internal executive or broker). The developer decides what to do — the system does not resolve the conflict automatically.
+
+---
+
+## 5. Module: Broker Marketplace
+
+This module manages the relationship between external brokers and developer projects.
+
+### Commercial proposal (FREE and PRO plan)
+
+Any broker with an approved account can generate a commercial proposal for any available unit in any public project. The proposal does not lock the unit.
+
+The proposal includes:
+
+- The broker's client data (name, national ID, phone)
+- The selected unit or set of units
+- The price at the time of generation — frozen at that moment. If the price changes later, the document reflects the price on the day it was generated.
+- Estimated commission for the broker
+- Generation date and time
+- Valid for 30 days
+
+The document can be shared directly via WhatsApp.
+
+The generation date and time is the official record that this broker presented this unit to this client. It serves as evidence in commission disputes.
+
+### Reservation intent (PRO plan only)
+
+When a broker has a serious client who wants to commit to a specific unit, they declare a reservation intent.
+
+When declaring the intent, the broker provides:
+
+- Which unit or units they want to reserve
+- Client data: full name, national ID, phone, optional email
+- Whether the client already has secured financing
+- Whether the client has already visited the project physically
+
+At the moment the intent is declared:
+
+- The unit changes from AVAILABLE to WITH INTEREST
+- All other brokers who were viewing that unit receive a notification: "This unit just received a reservation intent"
+- The Developer Admin receives a notification with the broker's and client's data
+- A countdown timer begins
+
+### Intent on multiple units (bundle)
+
+A broker can declare an intent on several units at the same time (for example: Apartment 301 + Parking E-04 + Storage D-02). This is called a bundle.
+
+A bundle is atomic: it is approved or rejected as a whole. It is not possible to approve only the apartment and reject the parking spot. If the intent is cancelled or expires, all units in the bundle are released at the same time.
+
+For a bundle to be valid, all units must be in AVAILABLE status at the exact same instant. If any of them already has another active intent, the entire operation cannot proceed.
+
+### Intent countdown timer
+
+The developer defines per project how many business hours they have to respond to an intent. The minimum is 24 business hours and the maximum is 168 business hours (equivalent to one full work week).
+
+Business hours are counted only on weekdays (Monday through Friday), excluding Bolivian national holidays.
+
+The countdown starts at the exact moment the intent is declared.
+
+The Developer Admin receives two reminders before it expires:
+
+- First when 50% of the time has elapsed
+- Second when 75% of the time has elapsed
+
+If the Developer Admin does not respond before the deadline, the intent expires automatically. Units return to AVAILABLE. Both the broker and the Developer Admin receive a notification stating the intent expired due to no response.
+
+**Timer pause:** If the project moves to PAUSED status, the countdown for all active intents freezes. When the project returns to PUBLISHED, the countdown resumes from where it left off. The intent is not cancelled — only paused.
+
+### Approval and rejection
+
+The Developer Admin reviews the intent and decides.
+
+**If approved:**
+
+- The unit moves to RESERVED status
+- The intent status becomes APPROVED
+- A commission record is automatically created for the corresponding amount
+- Brokers on the waitlist for that unit receive a notification: "This unit has been reserved"
+
+**If rejected:**
+
+- A mandatory reason must be selected: client not qualified, incomplete data, broker not enabled, taken internally, other
+- An optional free-text note can be added
+- The unit returns to AVAILABLE
+- If there is a waitlist, the next broker in line is notified
+- The broker receives a notification with the rejection reason
+
+### Cancellation by the broker
+
+The broker can cancel their own intent at any time before it is approved or rejected. Upon cancellation, the unit returns to AVAILABLE and the broker's cancellation counter for the last 30 days increases by one.
+
+### Waitlist
+
+If a unit already has an active intent (WITH INTEREST status), a PRO broker can join the waitlist for that unit.
+
+The waitlist is strictly first-come, first-served based on registration time. The position does not change once assigned.
+
+When the unit becomes free (due to cancellation, rejection, or expiration of the previous intent), the first broker on the list receives a notification. They have 2 hours to declare their own intent. If they do not act within that window, their spot is discarded and the next broker in line is notified. This continues until someone acts or the list is exhausted.
+
+When a unit moves to RESERVED or SOLD, all brokers on the waitlist receive a notification: "This unit is no longer available" and their waitlist entries are discarded.
+
+### Access to private projects
+
+For projects with PRIVATE visibility, the developer manually manages which brokers have access.
+
+The Developer Admin can invite a broker by name or email. The broker receives a notification and can accept or ignore the invitation.
+
+The Developer Admin can revoke a broker's access at any time, with one exception: they cannot revoke it if that broker has an ACTIVE or APPROVED intent within that project. The system blocks the action and shows which intent is blocking it.
+
+---
+
+## 6. Module: Reservations and Purchase Agreements
+
+This module covers what happens after a broker's intent is approved or a direct lead reaches RESERVED status.
+
+### Origin of a reservation
+
+A reservation can originate in two ways:
+
+1. The Developer Admin approves a broker's intent → the reservation is created automatically
+2. An internal executive moves a lead to RESERVED status → the reservation is created manually
+
+In both cases, the reservation is linked to a unit and a client (identified by their national ID).
+
+### What a reservation contains
+
+- Reserved unit or units
+- Client: name, national ID, phone, email
+- Sales channel: external broker or direct sale
+- If via broker: broker data and reference to the approved intent
+- If direct sale: responsible internal executive
+- Reservation payment amount received (in bolivianos or dollars)
+- Date the reservation payment was received
+- Deadline to sign the purchase agreement
+
+### Reservation statuses
+
+1. **RESERVED** — reservation payment received, pending purchase agreement signature
+2. **AGREEMENT SIGNED** — the purchase agreement document was signed by both parties
+3. **IN PROCESS** — in administrative or notarial process toward the final deed
+4. **DELIVERED** — the unit was physically handed over to the buyer
+5. **FALLEN** — the reservation fell through (the client did not follow through). The unit returns to AVAILABLE.
+
+### Purchase agreement
+
+When the agreement is signed, the executive records the signing date. The document itself is not uploaded to the system in the MVP — only the date is recorded.
+
+If the agreement is not signed before the deadline defined in the reservation, the system generates an alert for the Developer Admin and the responsible executive.
+
+### Unit delivery
+
+When the unit is physically handed over to the buyer, the executive records the delivery date. At that moment the unit moves to SOLD status (terminal) and the post-sale module is enabled for that unit.
+
+---
+
+## 7. Module: Payment Plans and Collections
+
+This module records payments associated with each sale. It does not process payments — it only records them manually.
+
+### Payment plan
+
+Each reservation can have a payment plan defined. A plan consists of a list of installments, where each installment has:
+
+- Description (e.g., "Down payment", "Installment 1", "Payment on deed signing")
+- Amount in dollars or bolivianos
+- Due date
+
+The Developer Admin or the internal executive creates the plan manually for each reservation.
+
+### Recording a payment
+
+When the client makes a payment, the executive records it specifying:
+
+- Which installment in the plan it corresponds to
+- Amount received
+- Date of receipt
+- Payment method (bank transfer, QR code, cash, other)
+- Reference or receipt (transaction number or other identifier)
+
+### Due date alerts
+
+The system generates internal alerts when an installment is close to its due date (3 days before) or has already passed its due date without being paid. The alert goes to the responsible executive and the Developer Admin.
+
+### Debt status
+
+For each reservation, it is possible to see at any time how much has been paid, how much remains, and which installments are overdue. This view is only for the developer — the client does not have access to the system.
+
+---
+
+## 8. Module: Broker Commissions
+
+This module records what is owed to which broker for each sale closed through the external channel. It does not process payments.
+
+### Automatic creation
+
+When the Developer Admin approves a reservation intent, the system automatically creates a commission record with:
+
+- The broker who is owed
+- Units sold
+- Sale price of each unit at the time of approval
+- Applicable commission percentage for each unit
+- Total amount owed in dollars
+
+This record is immutable — it cannot be edited after creation.
+
+### Commission statuses
+
+- **PENDING** — the commission is recorded but has not been paid
+- **PAID** — the payment was made outside the system and the Developer Admin marked it manually
+- **IN DISPUTE** — there is a disagreement between the developer and the broker about the commission
+
+### Marking as paid
+
+The Developer Admin manually marks a commission as paid. When they do, the system records who marked it and at what time. The broker receives a notification.
+
+### Broker view
+
+The broker can see the status of all their commissions: pending, paid, and in dispute. They cannot modify any status.
+
+### Dispute
+
+If there is a disagreement, the Developer Admin can mark the commission as IN DISPUTE and add a note explaining the reason. The broker receives a notification. Resolution of the dispute happens outside the system — there is no mediation flow in the MVP.
+
+---
+
+## 9. Module: Post-Sale
+
+This module activates for a unit when it is marked as DELIVERED. It manages issues the buyer may report after receiving their property.
+
+### Who reports
+
+The buyer does not have access to the system. It is the developer's executive who registers the claim or request when the buyer contacts them by any means (phone, WhatsApp, in person).
+
+### Request types
+
+- **CLAIM** — the buyer reports something that does not work or does not match what was promised
+- **WARRANTY** — the buyer requests repair of something covered by the project's warranty
+- **INQUIRY** — the buyer has a question about their unit
+
+### Request lifecycle
+
+1. **OPEN** — registered, not yet assigned
+2. **IN PROGRESS** — assigned to an internal responsible party, being worked on
+3. **RESOLVED** — the issue was addressed, pending confirmation
+4. **CLOSED** — confirmed as completed
+
+Every status change is recorded with date and who made the change.
+
+### Request contents
+
+- Unit it corresponds to
+- Request type
+- Problem description
+- Assigned internal responsible party
+- Registration date
+- Resolution deadline (defined by the developer)
+- Process notes (visible internally only)
+- Closing date
+
+### Alerts
+
+If a request does not change status for more than 7 days since it was opened, the system generates an alert for the Developer Admin.
+
+---
+
+## 10. Cross-cutting business rules
+
+These rules apply across the entire system and are non-negotiable.
+
+### Inventory integrity
+
+A unit in WITH INTEREST status has exactly one active intent. Never two. The system must guarantee this even if two brokers attempt to declare an intent on the same unit at the exact same moment.
+
+### Immutability of key records
+
+The following data cannot be edited once created:
+
+- Unit price history
+- Generated commercial proposals (price and date)
+- Commission records
+- Intent creation timestamps
+
+### Client duplicate detection
+
+The national ID (CI) is the universal client identifier. Every time a client is registered — whether as a direct lead or as a broker's client in an intent — the system checks whether that national ID already exists in the system for that developer. If it does, an alert is generated. The system never blocks automatically — it is always the developer who decides.
+
+### Notifications
+
+Every relevant action generates a notification to the corresponding actor. MVP notifications are by email. There are no automatic WhatsApp notifications in the MVP — users share manually via WhatsApp when they choose to.
+
+### Multi-tenancy
+
+Each developer operates in their own isolated space. A developer can never see data from another developer. Brokers can work with multiple developers simultaneously, but each developer only sees the interactions that broker has had with them.
+
+### Business hours
+
+Intent countdown timers are calculated in business hours: Monday through Friday, excluding Bolivian national holidays. If an intent is declared on a Friday at 6pm and the deadline is 24 business hours, the countdown resumes on Monday at 8am.
+
+---
+
+## 11. What the MVP does NOT include
+
+The following features are explicitly out of scope for this version:
+
+- Online payment processing (all payments are recorded manually)
+- Access portal for end buyers (the buyer never enters the system)
+- Electronic document signing
+- Integration with external real estate portals
+- Automatic WhatsApp notifications
+- Interactive floor plan or building map
+- Bulk unit loading from Excel (units are loaded one by one)
+- Mobile application (responsive web only)
+- Advanced reporting and analytics
+- Integration with accounting systems
+- Property valuation or appraisal tools
+- Construction progress or works management
+
+---
+
+## 12. Complete end-to-end flows
+
+### Flow A — Direct sale (no broker)
+
+```
+1.  Client walks into the sales office or contacts the developer directly
+2.  Internal executive registers them as a lead with their data and unit of interest
+3.  System checks if the national ID already exists → if duplicate found, shows alert
+4.  Executive advances the lead: NEW → CONTACTED → VISITED
+5.  Executive generates a commercial proposal and shares it with the client
+6.  Lead moves to QUOTED
+7.  Client decides to buy → executive records the reservation payment
+8.  Lead moves to RESERVED → unit moves to RESERVED
+9.  Reservation is created with a payment plan
+10. Executive records payments according to the plan
+11. Agreement is signed → executive records the signing date
+12. Final administrative steps → executive changes status to IN PROCESS
+13. Physical handover → executive records delivery date
+14. Unit moves to SOLD (terminal)
+15. Post-sale module is enabled for that unit
+```
+
+### Flow B — Sale through external broker
+
+```
+1.  Broker browses the project catalog
+2.  Broker generates a commercial proposal for their client on a unit
+3.  Proposal is recorded with a timestamp (evidence of broker-client-unit relationship)
+4.  Broker decides to declare a reservation intent (PRO plan only)
+5.  System verifies the unit is AVAILABLE
+6.  System checks client national ID → if it already exists in the developer's direct leads, alert is shown
+7.  Unit moves to WITH INTEREST
+8.  Business hours countdown begins
+9.  Developer Admin receives a notification
+10. Developer Admin reviews: broker data, reputation score, client data
+11. Developer Admin approves or rejects before the deadline expires
+    → If approved: unit moves to RESERVED, commission record created automatically
+    → If rejected: unit returns to AVAILABLE, broker receives rejection reason
+    → If deadline expires with no response: intent expires, unit returns to AVAILABLE
+12. (If approved) Reservation is created
+13. Internal executive takes over the case and continues with payment plan and agreement
+14. Process continues the same as Flow A from step 9
+15. Once the sale is closed, Developer Admin marks the broker's commission as paid
+```
+
+### Flow C — Disputed unit (broker + direct lead with same national ID)
+
+```
+1.  Executive registers a lead with national ID "12345678"
+2.  Broker declares an intent with a client of national ID "12345678"
+3.  System detects the national ID match
+4.  Both parties receive an alert
+5.  Developer Admin sees the alert in their dashboard
+6.  Developer Admin decides:
+    → If prioritizing the direct lead: rejects the broker's intent with reason "taken internally"
+    → If prioritizing the broker: moves the direct lead to LOST and approves the intent
+7.  The system takes no automatic decision
+```

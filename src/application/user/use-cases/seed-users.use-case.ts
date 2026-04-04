@@ -38,7 +38,7 @@ import {
   MEDIA_REPOSITORY,
 } from '@domain/media/repositories/media.repository';
 import { Organization } from '@domain/organization/entities/organization.entity';
-import { Role } from '@domain/user/value-objects/role.vo';
+import { UserRole } from '@domain/user/value-objects/role.vo';
 import { ProjectStatus } from '@domain/project/value-objects/project-status.vo';
 import { ProjectVisibility } from '@domain/project/value-objects/project-visibility.vo';
 import { ProjectAmenity } from '@domain/project/value-objects/project-amenity.vo';
@@ -61,6 +61,20 @@ import { organizations } from '@infrastructure/persistence/drizzle/schema/organi
 import { countries } from '@infrastructure/persistence/drizzle/schema/country.schema';
 import { cities } from '@infrastructure/persistence/drizzle/schema/city.schema';
 import { users } from '@infrastructure/persistence/drizzle/schema/user.schema';
+import { postSaleStatusHistory } from '@infrastructure/persistence/drizzle/schema/post-sale-status-history.schema';
+import { postSaleRequests } from '@infrastructure/persistence/drizzle/schema/post-sale-request.schema';
+import { payments } from '@infrastructure/persistence/drizzle/schema/payment.schema';
+import { installments } from '@infrastructure/persistence/drizzle/schema/installment.schema';
+import { paymentPlans } from '@infrastructure/persistence/drizzle/schema/payment-plan.schema';
+import { commissions } from '@infrastructure/persistence/drizzle/schema/commission.schema';
+import { reservations } from '@infrastructure/persistence/drizzle/schema/reservation.schema';
+import { waitlists } from '@infrastructure/persistence/drizzle/schema/waitlist.schema';
+import { reservationIntents } from '@infrastructure/persistence/drizzle/schema/reservation-intent.schema';
+import { commercialProposals } from '@infrastructure/persistence/drizzle/schema/commercial-proposal.schema';
+import { leadStatusHistory } from '@infrastructure/persistence/drizzle/schema/lead-status-history.schema';
+import { leads } from '@infrastructure/persistence/drizzle/schema/lead.schema';
+import { brokerProjectAccess } from '@infrastructure/persistence/drizzle/schema/broker-project-access.schema';
+import { brokers } from '@infrastructure/persistence/drizzle/schema/broker.schema';
 
 const SEED_ORGANIZATIONS = [
   {
@@ -78,7 +92,7 @@ const SEED_USERS = [
     phoneNumber: '69531998',
     email: 'torricopietro@gmail.com',
     password: bcrypt.hashSync('Pietrogato3@', 10),
-    roles: [Role.ADMIN],
+    role: UserRole.DEVELOPER_ADMIN,
   },
   {
     name: 'Carlos',
@@ -86,7 +100,7 @@ const SEED_USERS = [
     phoneNumber: '78451233',
     email: 'carlos@test.com',
     password: bcrypt.hashSync('Abc123', 10),
-    roles: [Role.SUPER_USER],
+    role: UserRole.SUPER_ADMIN,
   },
   {
     name: 'María',
@@ -94,7 +108,15 @@ const SEED_USERS = [
     phoneNumber: '70123456',
     email: 'maria@test.com',
     password: bcrypt.hashSync('Password123', 10),
-    roles: [Role.USER],
+    role: UserRole.DEVELOPER_SALES,
+  },
+  {
+    name: 'Fernando',
+    lastName: 'Quispe Mamani',
+    phoneNumber: '71234567',
+    email: 'fernando@broker.com',
+    password: bcrypt.hashSync('Broker123', 10),
+    role: UserRole.BROKER,
   },
 ];
 
@@ -410,31 +432,55 @@ export class SeedUsersUseCase {
 
       await this.deleteAllData();
 
-      const countries = await this.createCountries();
-      const cities = await this.createCities(countries);
-      const neighborhoodMap = await this.createNeighborhoods(cities);
-      const organizations = await this.createOrganizations();
-      const organizationId = organizations[0].id;
-      const users = await this.createUsers(organizationId);
+      const countriesMap = await this.createCountries();
+      const citiesMap = await this.createCities(countriesMap);
+      const neighborhoodMap = await this.createNeighborhoods(citiesMap);
+      const orgs = await this.createOrganizations();
+      const organizationId = orgs[0].id;
+      const createdUsers = await this.createUsers(organizationId);
       const developer = await this.createDeveloper(organizationId);
-      const createdProjects = await this.createProjects(developer.id, countries, cities, neighborhoodMap);
+      const createdProjects = await this.createProjects(
+        developer.id,
+        countriesMap,
+        citiesMap,
+        neighborhoodMap,
+      );
       await this.createProjectMedia(createdProjects);
       const unitCount = await this.createUnits(createdProjects);
       await this.createUnitMedia(createdProjects);
+
+      const brokerUser = createdUsers.find(
+        (u) => u.email === 'fernando@broker.com',
+      );
+      const salesUser = createdUsers.find(
+        (u) => u.email === 'maria@test.com',
+      );
+      const adminUser = createdUsers.find(
+        (u) => u.email === 'torricopietro@gmail.com',
+      );
+
+      const seedExtras = await this.seedNewModules(
+        developer.id,
+        createdProjects,
+        brokerUser!.id,
+        salesUser!.id,
+        adminUser!.id,
+      );
 
       console.log('[Seed] Seed process completed successfully!');
 
       return {
         message: 'Database seeded successfully',
         summary: {
-          organizations: organizations.length,
-          users: users.length,
-          countries: countries.length,
-          cities: Object.values(cities).flat().length,
+          organizations: orgs.length,
+          users: createdUsers.length,
+          countries: countriesMap ? Object.keys(countriesMap).length : 0,
+          cities: Object.values(citiesMap).flat().length,
           neighborhoods: neighborhoodMap.size,
           developers: 1,
           projects: createdProjects.length,
           units: unitCount,
+          ...seedExtras,
         },
       };
     } catch (error) {
@@ -446,6 +492,20 @@ export class SeedUsersUseCase {
   private async deleteAllData() {
     console.log('[Seed] Deleting all data...');
 
+    await this.drizzle.db.delete(postSaleStatusHistory);
+    await this.drizzle.db.delete(postSaleRequests);
+    await this.drizzle.db.delete(payments);
+    await this.drizzle.db.delete(installments);
+    await this.drizzle.db.delete(paymentPlans);
+    await this.drizzle.db.delete(commissions);
+    await this.drizzle.db.delete(reservations);
+    await this.drizzle.db.delete(waitlists);
+    await this.drizzle.db.delete(reservationIntents);
+    await this.drizzle.db.delete(commercialProposals);
+    await this.drizzle.db.delete(leadStatusHistory);
+    await this.drizzle.db.delete(leads);
+    await this.drizzle.db.delete(brokerProjectAccess);
+    await this.drizzle.db.delete(brokers);
     await this.drizzle.db.delete(media);
     await this.drizzle.db.delete(unitPriceHistory);
     await this.drizzle.db.delete(units);
@@ -683,7 +743,6 @@ export class SeedUsersUseCase {
     console.log('[Seed] Creating unit media...');
 
     for (const project of projectList) {
-      const unitDefs = SEED_UNITS[project.name] ?? [];
       const createdUnits = await this.unitRepository.findByProjectId(
         project.id,
         100,
@@ -726,5 +785,432 @@ export class SeedUsersUseCase {
         }
       }
     }
+  }
+
+  private async seedNewModules(
+    developerId: string,
+    projectList: { id: string; name: string }[],
+    brokerUserId: string,
+    salesUserId: string,
+    adminUserId: string,
+  ) {
+    console.log('[Seed] Seeding new modules...');
+
+    const vitrubio = projectList.find((p) => p.name === 'Edificio Vitrubio')!;
+    const jardines = projectList.find(
+      (p) => p.name === 'Condominio Los Jardines',
+    )!;
+
+    const vitrubioUnits = await this.unitRepository.findByProjectId(
+      vitrubio.id,
+      100,
+      0,
+    );
+    const jardinesUnits = await this.unitRepository.findByProjectId(
+      jardines.id,
+      100,
+      0,
+    );
+
+    const apt301 = vitrubioUnits.data.find(
+      (u) => u.identifier === 'Apto 301',
+    )!;
+    const apt501 = vitrubioUnits.data.find(
+      (u) => u.identifier === 'Apto 501',
+    )!;
+    const parking = vitrubioUnits.data.find(
+      (u) => u.identifier === 'E-04',
+    )!;
+    const casa1a = jardinesUnits.data.find(
+      (u) => u.identifier === 'Casa 1A',
+    )!;
+
+    // --- Broker ---
+    const [broker] = await this.drizzle.db
+      .insert(brokers)
+      .values({
+        userId: brokerUserId,
+        plan: 'PRO',
+        status: 'APPROVED',
+        companyName: 'Quispe Bienes Raíces',
+        licenseNumber: 'BRK-LP-2025-0042',
+      })
+      .returning();
+    console.log(`[Seed] Created broker: ${broker.companyName}`);
+
+    // --- Broker Project Access ---
+    const [access1] = await this.drizzle.db
+      .insert(brokerProjectAccess)
+      .values({
+        brokerId: broker.id,
+        projectId: vitrubio.id,
+        status: 'ACCEPTED',
+      })
+      .returning();
+    const [access2] = await this.drizzle.db
+      .insert(brokerProjectAccess)
+      .values({
+        brokerId: broker.id,
+        projectId: jardines.id,
+        status: 'INVITED',
+      })
+      .returning();
+    console.log('[Seed] Created broker project access entries');
+
+    // --- Leads ---
+    const leadDataList = [
+      {
+        developerId,
+        assignedExecutiveId: salesUserId,
+        fullName: 'Ana Lucía Vargas Pinto',
+        nationalId: '5678901',
+        phone: '+59172345678',
+        email: 'ana.vargas@email.com',
+        source: 'WALK_IN' as const,
+        status: 'VISITED' as const,
+        interestedUnitIds: [apt301.id],
+        notes: 'Visitó el departamento modelo, muy interesada en vista norte.',
+      },
+      {
+        developerId,
+        assignedExecutiveId: salesUserId,
+        fullName: 'Roberto Fernández Guzmán',
+        nationalId: '4321098',
+        phone: '+59178654321',
+        email: 'roberto.f@email.com',
+        source: 'REFERRAL' as const,
+        status: 'QUOTED' as const,
+        interestedUnitIds: [apt501.id, parking.id],
+        notes:
+          'Referido por cliente anterior. Busca departamento de 3 dormitorios con parqueo.',
+      },
+      {
+        developerId,
+        assignedExecutiveId: null,
+        fullName: 'Carla Mendoza Ortiz',
+        nationalId: '8765432',
+        phone: '+59176543210',
+        email: null,
+        source: 'SOCIAL_MEDIA' as const,
+        status: 'NEW' as const,
+        interestedUnitIds: [casa1a.id],
+        notes: 'Contactó por Instagram, interesada en casas en Santa Cruz.',
+      },
+    ];
+
+    const createdLeads = [];
+    for (const ld of leadDataList) {
+      const [lead] = await this.drizzle.db
+        .insert(leads)
+        .values(ld)
+        .returning();
+      createdLeads.push(lead);
+      console.log(`[Seed] Created lead: ${lead.fullName}`);
+    }
+
+    // --- Lead Status History ---
+    const leadHistoryEntries = [
+      {
+        leadId: createdLeads[0].id,
+        fromStatus: 'NEW' as const,
+        toStatus: 'CONTACTED' as const,
+        changedByUserId: salesUserId,
+      },
+      {
+        leadId: createdLeads[0].id,
+        fromStatus: 'CONTACTED' as const,
+        toStatus: 'VISITED' as const,
+        changedByUserId: salesUserId,
+      },
+      {
+        leadId: createdLeads[1].id,
+        fromStatus: 'NEW' as const,
+        toStatus: 'CONTACTED' as const,
+        changedByUserId: salesUserId,
+      },
+      {
+        leadId: createdLeads[1].id,
+        fromStatus: 'CONTACTED' as const,
+        toStatus: 'VISITED' as const,
+        changedByUserId: salesUserId,
+      },
+      {
+        leadId: createdLeads[1].id,
+        fromStatus: 'VISITED' as const,
+        toStatus: 'QUOTED' as const,
+        changedByUserId: salesUserId,
+      },
+    ];
+    await this.drizzle.db.insert(leadStatusHistory).values(leadHistoryEntries);
+    console.log(
+      `[Seed] Created ${leadHistoryEntries.length} lead status history entries`,
+    );
+
+    // --- Commercial Proposals ---
+    const now = new Date();
+    const validUntil = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+    const [proposalBroker] = await this.drizzle.db
+      .insert(commercialProposals)
+      .values({
+        type: 'BROKER',
+        brokerId: broker.id,
+        developerId,
+        clientName: 'Jorge Gutiérrez Soliz',
+        clientNationalId: '1122334',
+        clientPhone: '+59173456789',
+        clientEmail: 'jorge.gutierrez@email.com',
+        units: [
+          {
+            unitId: apt301.id,
+            identifier: 'Apto 301',
+            priceUSD: 125000,
+            commissionPct: 3.0,
+          },
+        ],
+        totalPriceUSD: 125000,
+        estimatedCommissionUSD: 3750,
+        generatedAt: now,
+        validUntil,
+      })
+      .returning();
+
+    const [proposalDirect] = await this.drizzle.db
+      .insert(commercialProposals)
+      .values({
+        type: 'DIRECT',
+        executiveId: salesUserId,
+        developerId,
+        clientName: 'Mónica Salazar Ríos',
+        clientNationalId: '9988776',
+        clientPhone: '+59174567890',
+        clientEmail: 'monica.salazar@email.com',
+        units: [
+          {
+            unitId: apt501.id,
+            identifier: 'Apto 501',
+            priceUSD: 155000,
+            commissionPct: 3.5,
+          },
+          {
+            unitId: parking.id,
+            identifier: 'E-04',
+            priceUSD: 15000,
+            commissionPct: 3.0,
+          },
+        ],
+        totalPriceUSD: 170000,
+        estimatedCommissionUSD: 5875,
+        generatedAt: now,
+        validUntil,
+      })
+      .returning();
+    console.log('[Seed] Created 2 commercial proposals');
+
+    // --- Reservation Intent (APPROVED → will create reservation) ---
+    const intentDeadline = new Date(
+      now.getTime() + 48 * 60 * 60 * 1000,
+    );
+    const [approvedIntent] = await this.drizzle.db
+      .insert(reservationIntents)
+      .values({
+        brokerId: broker.id,
+        projectId: vitrubio.id,
+        unitIds: [apt301.id],
+        clientName: 'Jorge Gutiérrez Soliz',
+        clientNationalId: '1122334',
+        clientPhone: '+59173456789',
+        clientEmail: 'jorge.gutierrez@email.com',
+        hasFinancing: false,
+        hasVisited: true,
+        status: 'APPROVED',
+        deadlineAt: intentDeadline,
+      })
+      .returning();
+
+    // --- Reservation Intent (ACTIVE – still counting down) ---
+    const activeDeadline = new Date(
+      now.getTime() + 36 * 60 * 60 * 1000,
+    );
+    const [activeIntent] = await this.drizzle.db
+      .insert(reservationIntents)
+      .values({
+        brokerId: broker.id,
+        projectId: jardines.id,
+        unitIds: [casa1a.id],
+        clientName: 'Patricia Huanca Mamani',
+        clientNationalId: '5544332',
+        clientPhone: '+59175678901',
+        hasFinancing: true,
+        hasVisited: true,
+        status: 'ACTIVE',
+        deadlineAt: activeDeadline,
+      })
+      .returning();
+    console.log('[Seed] Created 2 reservation intents');
+
+    // --- Reservation (from approved intent) ---
+    const [reservation] = await this.drizzle.db
+      .insert(reservations)
+      .values({
+        unitIds: [apt301.id],
+        clientName: 'Jorge Gutiérrez Soliz',
+        clientNationalId: '1122334',
+        clientPhone: '+59173456789',
+        clientEmail: 'jorge.gutierrez@email.com',
+        salesChannel: 'BROKER',
+        brokerId: broker.id,
+        intentId: approvedIntent.id,
+        developerId,
+        reservationPaymentAmount: 5000,
+        reservationPaymentCurrency: 'USD',
+        reservationPaymentDate: now,
+        agreementDeadline: new Date(
+          now.getTime() + 15 * 24 * 60 * 60 * 1000,
+        ),
+        status: 'RESERVED',
+      })
+      .returning();
+    console.log(`[Seed] Created reservation: ${reservation.id}`);
+
+    // --- Payment Plan ---
+    const [paymentPlan] = await this.drizzle.db
+      .insert(paymentPlans)
+      .values({
+        reservationId: reservation.id,
+        createdByUserId: adminUserId,
+      })
+      .returning();
+    console.log(`[Seed] Created payment plan: ${paymentPlan.id}`);
+
+    // --- Installments ---
+    const installmentData = [
+      {
+        paymentPlanId: paymentPlan.id,
+        description: 'Reserva / Anticipo',
+        amount: 5000,
+        currency: 'USD',
+        dueDate: now,
+        status: 'PAID' as const,
+      },
+      {
+        paymentPlanId: paymentPlan.id,
+        description: 'Cuota 1 - Firma de contrato',
+        amount: 30000,
+        currency: 'USD',
+        dueDate: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000),
+        status: 'PENDING' as const,
+      },
+      {
+        paymentPlanId: paymentPlan.id,
+        description: 'Cuota 2 - Avance de obra 50%',
+        amount: 45000,
+        currency: 'USD',
+        dueDate: new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000),
+        status: 'PENDING' as const,
+      },
+      {
+        paymentPlanId: paymentPlan.id,
+        description: 'Cuota final - Contra entrega',
+        amount: 45000,
+        currency: 'USD',
+        dueDate: new Date(now.getTime() + 180 * 24 * 60 * 60 * 1000),
+        status: 'PENDING' as const,
+      },
+    ];
+    const createdInstallments = await this.drizzle.db
+      .insert(installments)
+      .values(installmentData)
+      .returning();
+    console.log(
+      `[Seed] Created ${createdInstallments.length} installments`,
+    );
+
+    // --- Payment (for the first paid installment) ---
+    const paidInstallment = createdInstallments[0];
+    const [payment] = await this.drizzle.db
+      .insert(payments)
+      .values({
+        installmentId: paidInstallment.id,
+        amount: 5000,
+        receivedDate: now,
+        paymentMethod: 'BANK_TRANSFER',
+        reference: 'TRX-20260404-001',
+        recordedByUserId: adminUserId,
+      })
+      .returning();
+    console.log(`[Seed] Created payment: ${payment.id}`);
+
+    // --- Commission ---
+    const [commission] = await this.drizzle.db
+      .insert(commissions)
+      .values({
+        brokerId: broker.id,
+        intentId: approvedIntent.id,
+        reservationId: reservation.id,
+        developerId,
+        units: [
+          {
+            unitId: apt301.id,
+            identifier: 'Apto 301',
+            priceUSD: 125000,
+            commissionPct: 3.0,
+            commissionUSD: 3750,
+          },
+        ],
+        totalAmountUSD: 3750,
+        status: 'PENDING',
+      })
+      .returning();
+    console.log(`[Seed] Created commission: $${commission.totalAmountUSD}`);
+
+    // --- Post-Sale Request ---
+    const [postSaleReq] = await this.drizzle.db
+      .insert(postSaleRequests)
+      .values({
+        unitId: apt301.id,
+        reservationId: reservation.id,
+        requestType: 'INQUIRY',
+        description:
+          'Consulta sobre fecha exacta de entrega y documentos necesarios para escrituración.',
+        assignedToUserId: salesUserId,
+        status: 'OPEN',
+        resolutionDeadline: new Date(
+          now.getTime() + 7 * 24 * 60 * 60 * 1000,
+        ),
+        registrationDate: now,
+      })
+      .returning();
+    console.log(`[Seed] Created post-sale request: ${postSaleReq.id}`);
+
+    // --- Waitlist entry ---
+    const [waitlistEntry] = await this.drizzle.db
+      .insert(waitlists)
+      .values({
+        unitId: apt301.id,
+        brokerId: broker.id,
+        position: 1,
+        status: 'WAITING',
+      })
+      .returning();
+    console.log(`[Seed] Created waitlist entry: ${waitlistEntry.id}`);
+
+    console.log('[Seed] New modules seeded successfully!');
+
+    return {
+      brokers: 1,
+      brokerAccess: 2,
+      leads: createdLeads.length,
+      leadHistory: leadHistoryEntries.length,
+      proposals: 2,
+      intents: 2,
+      reservations: 1,
+      paymentPlans: 1,
+      installments: createdInstallments.length,
+      payments: 1,
+      commissions: 1,
+      postSaleRequests: 1,
+      waitlistEntries: 1,
+    };
   }
 }

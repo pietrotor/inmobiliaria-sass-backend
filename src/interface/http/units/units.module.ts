@@ -8,11 +8,11 @@ import { GetUnitUseCase } from '@application/unit/use-cases/get-unit.use-case';
 import { GetUnitsByProjectUseCase } from '@application/unit/use-cases/get-units-by-project.use-case';
 import { UpdateUnitUseCase } from '@application/unit/use-cases/update-unit.use-case';
 import { ChangeUnitStatusUseCase } from '@application/unit/use-cases/change-unit-status.use-case';
-import { UpdateUnitPriceUseCase } from '@application/unit/use-cases/update-unit-price.use-case';
 import { GetUnitPriceHistoryUseCase } from '@application/unit/use-cases/get-unit-price-history.use-case';
 import { DeleteUnitUseCase } from '@application/unit/use-cases/delete-unit.use-case';
 import { UploadUnitMediaUseCase } from '@application/unit/use-cases/upload-unit-media.use-case';
 import { DeleteUnitMediaUseCase } from '@application/unit/use-cases/delete-unit-media.use-case';
+import { UpdateUnitPriceUseCase } from '@application/unit/use-cases/update-unit-price.use-case';
 
 import { DrizzleModule } from '@infrastructure/persistence/drizzle/drizzle.module';
 import { DrizzleUnitRepository } from '@infrastructure/persistence/repositories/unit.repository.impl';
@@ -42,9 +42,9 @@ import { MediaModule } from '../media/media.module';
     GetUnitsByProjectUseCase,
     UpdateUnitUseCase,
     ChangeUnitStatusUseCase,
-    UpdateUnitPriceUseCase,
     GetUnitPriceHistoryUseCase,
     DeleteUnitUseCase,
+    UpdateUnitPriceUseCase,
     UploadUnitMediaUseCase,
     DeleteUnitMediaUseCase,
 

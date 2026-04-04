@@ -1,0 +1,7 @@
+export enum IntentStatus {
+  ACTIVE = 'ACTIVE',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+  EXPIRED = 'EXPIRED',
+  CANCELLED = 'CANCELLED',
+}

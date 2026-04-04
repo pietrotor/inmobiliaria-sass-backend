@@ -25,7 +25,7 @@ export const organizations = pgTable(
     facebook: varchar('facebook', { length: 255 }),
     primaryColor: varchar('primary_color', { length: 7 }),
     secondaryColor: varchar('secondary_color', { length: 7 }),
-    timezone: varchar('timezone', { length: 100 }).default('America/Caracas'),
+    timezone: varchar('timezone', { length: 100 }).default('America/La_Paz'),
     defaultCurrency: varchar('default_currency', { length: 10 }).default('USD'),
     isActive: boolean('is_active').notNull().default(true),
     deleted: boolean('deleted').notNull().default(false),

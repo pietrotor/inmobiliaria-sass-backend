@@ -23,7 +23,7 @@ export class DrizzleUserRepository implements UserRepository {
         email: user.email,
         phoneNumber: user.phoneNumber,
         password: user.password,
-        roles: user.roles as any,
+        role: user.role as any,
         organizationId: user.organizationId,
         isActive: user.isActive,
         deleted: user.deleted ?? false,
@@ -72,7 +72,7 @@ export class DrizzleUserRepository implements UserRepository {
       updateData.phoneNumber = userData.phoneNumber;
     if (userData.password !== undefined)
       updateData.password = userData.password;
-    if (userData.roles !== undefined) updateData.roles = userData.roles;
+    if (userData.role !== undefined) updateData.role = userData.role;
     if (userData.isActive !== undefined)
       updateData.isActive = userData.isActive;
     if (userData.deleted !== undefined) updateData.deleted = userData.deleted;

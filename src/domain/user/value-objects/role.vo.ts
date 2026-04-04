@@ -1,7 +1,6 @@
-export enum Role {
-  ADMIN = 'ADMIN',
-  USER = 'USER',
-  SUPER_USER = 'superUser',
+export enum UserRole {
+  SUPER_ADMIN = 'SUPER_ADMIN',
+  DEVELOPER_ADMIN = 'DEVELOPER_ADMIN',
+  DEVELOPER_SALES = 'DEVELOPER_SALES',
+  BROKER = 'BROKER',
 }
-
-export type ValidRoles = Role;

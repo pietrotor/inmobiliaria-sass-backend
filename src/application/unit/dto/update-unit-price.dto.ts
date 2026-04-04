@@ -1,15 +1,15 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsNumber, IsString, MaxLength, Min } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsNotEmpty, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 
 export class UpdateUnitPriceDto {
-  @ApiProperty({ example: 130000 })
+  @ApiProperty({ example: 135000 })
   @IsNumber()
   @Min(0)
+  @IsNotEmpty()
   newPriceUSD: number;
 
-  @ApiProperty({ example: 'Market adjustment Q2 2026' })
+  @ApiPropertyOptional({ example: 'Market adjustment Q2 2026' })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  @MaxLength(500)
-  reason: string;
+  reason?: string;
 }

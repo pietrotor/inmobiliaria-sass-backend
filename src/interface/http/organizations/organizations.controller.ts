@@ -30,7 +30,7 @@ import { CreateOrganizationDto } from '@application/organization/dto/create-orga
 import { UpdateOrganizationDto } from '@application/organization/dto/update-organization.dto';
 import { OrganizationResponseDto } from '@application/organization/dto/organization-response.dto';
 import { Auth } from '@interface/http/common';
-import { Role } from '@domain/user/value-objects/role.vo';
+import { UserRole } from '@domain/user/value-objects/role.vo';
 
 @ApiTags('Organizations')
 @Controller('organizations')
@@ -44,7 +44,7 @@ export class OrganizationsController {
   ) {}
 
   @Post()
-  @Auth(Role.ADMIN, Role.SUPER_USER)
+  @Auth(UserRole.DEVELOPER_ADMIN, UserRole.SUPER_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a new organization' })
   @ApiBody({ type: CreateOrganizationDto })
@@ -90,7 +90,7 @@ export class OrganizationsController {
   }
 
   @Put(':id')
-  @Auth(Role.ADMIN, Role.SUPER_USER)
+  @Auth(UserRole.DEVELOPER_ADMIN, UserRole.SUPER_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update organization' })
   @ApiParam({ name: 'id', type: String })
@@ -111,7 +111,7 @@ export class OrganizationsController {
   }
 
   @Delete(':id')
-  @Auth(Role.ADMIN, Role.SUPER_USER)
+  @Auth(UserRole.DEVELOPER_ADMIN, UserRole.SUPER_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete organization (soft delete)' })
   @ApiParam({ name: 'id', type: String })

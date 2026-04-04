@@ -8,7 +8,12 @@ import {
 } from 'drizzle-orm/pg-core';
 import { organizations } from './organization.schema';
 
-export const roleEnum = pgEnum('role', ['ADMIN', 'USER', 'superUser']);
+export const userRoleEnum = pgEnum('user_role', [
+  'SUPER_ADMIN',
+  'DEVELOPER_ADMIN',
+  'DEVELOPER_SALES',
+  'BROKER',
+]);
 
 export const users = pgTable('user', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -18,7 +23,7 @@ export const users = pgTable('user', {
   phoneNumber: varchar('phoneNumber', { length: 255 }).notNull().unique(),
   password: varchar('password', { length: 255 }).notNull(),
   isActive: boolean('is_active').notNull().default(true),
-  roles: roleEnum('roles').array().notNull().default(['USER']),
+  role: userRoleEnum('role').notNull().default('DEVELOPER_SALES'),
   organizationId: uuid('organization_id')
     .notNull()
     .references(() => organizations.id, { onDelete: 'cascade' }),

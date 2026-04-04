@@ -1,4 +1,4 @@
-import { Role } from '../value-objects/role.vo';
+import { UserRole } from '../value-objects/role.vo';
 
 export interface UserProps {
   id: string;
@@ -7,7 +7,7 @@ export interface UserProps {
   email: string;
   phoneNumber: string;
   password: string;
-  roles: Role[];
+  role: UserRole;
   organizationId: string;
   isActive: boolean;
   deleted: boolean;
@@ -22,7 +22,7 @@ export class User {
   public readonly email: string;
   public readonly phoneNumber: string;
   public readonly password: string;
-  public readonly roles: Role[];
+  public readonly role: UserRole;
   public readonly organizationId: string;
   public readonly isActive: boolean;
   public readonly deleted: boolean;
@@ -36,7 +36,7 @@ export class User {
     this.email = props.email;
     this.phoneNumber = props.phoneNumber;
     this.password = props.password;
-    this.roles = props.roles;
+    this.role = props.role;
     this.organizationId = props.organizationId;
     this.isActive = props.isActive;
     this.deleted = props.deleted;
@@ -44,51 +44,35 @@ export class User {
     this.updatedAt = props.updatedAt;
   }
 
-  // Business logic methods
-  hasRole(role: Role): boolean {
-    return this.roles.includes(role);
+  hasRole(role: UserRole): boolean {
+    return this.role === role;
   }
 
   isAdmin(): boolean {
-    return this.hasRole(Role.ADMIN);
+    return this.role === UserRole.DEVELOPER_ADMIN;
   }
 
-  isSuperUser(): boolean {
-    return this.hasRole(Role.SUPER_USER);
+  isSuperAdmin(): boolean {
+    return this.role === UserRole.SUPER_ADMIN;
+  }
+
+  isDeveloper(): boolean {
+    return (
+      this.role === UserRole.DEVELOPER_ADMIN ||
+      this.role === UserRole.DEVELOPER_SALES
+    );
+  }
+
+  isBroker(): boolean {
+    return this.role === UserRole.BROKER;
   }
 
   activate(): User {
-    return new User({
-      id: this.id,
-      name: this.name,
-      lastName: this.lastName,
-      email: this.email,
-      phoneNumber: this.phoneNumber,
-      password: this.password,
-      roles: this.roles,
-      organizationId: this.organizationId,
-      isActive: true,
-      deleted: this.deleted,
-      createdAt: this.createdAt,
-      updatedAt: this.updatedAt,
-    });
+    return new User({ ...this, isActive: true });
   }
 
   deactivate(): User {
-    return new User({
-      id: this.id,
-      name: this.name,
-      lastName: this.lastName,
-      email: this.email,
-      phoneNumber: this.phoneNumber,
-      password: this.password,
-      roles: this.roles,
-      organizationId: this.organizationId,
-      isActive: false,
-      deleted: this.deleted,
-      createdAt: this.createdAt,
-      updatedAt: this.updatedAt,
-    });
+    return new User({ ...this, isActive: false });
   }
 
   withoutPassword() {

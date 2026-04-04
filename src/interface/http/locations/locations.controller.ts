@@ -50,7 +50,7 @@ import {
   NeighborhoodResponseDto,
 } from '@application/location/dto/location-response.dto';
 import { Auth } from '@interface/http/common';
-import { Role } from '@domain/user/value-objects/role.vo';
+import { UserRole } from '@domain/user/value-objects/role.vo';
 
 @ApiTags('Locations')
 @Controller('locations')
@@ -71,7 +71,7 @@ export class LocationsController {
   ) {}
 
   @Post('countries')
-  @Auth(Role.ADMIN, Role.SUPER_USER)
+  @Auth(UserRole.DEVELOPER_ADMIN, UserRole.SUPER_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a country' })
   @ApiBody({ type: CreateCountryDto })
@@ -99,7 +99,7 @@ export class LocationsController {
   }
 
   @Put('countries/:id')
-  @Auth(Role.ADMIN, Role.SUPER_USER)
+  @Auth(UserRole.DEVELOPER_ADMIN, UserRole.SUPER_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update a country' })
   @ApiParam({ name: 'id', type: String })
@@ -119,7 +119,7 @@ export class LocationsController {
   }
 
   @Delete('countries/:id')
-  @Auth(Role.ADMIN, Role.SUPER_USER)
+  @Auth(UserRole.DEVELOPER_ADMIN, UserRole.SUPER_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete a country' })
   @ApiParam({ name: 'id', type: String })
@@ -139,7 +139,7 @@ export class LocationsController {
   }
 
   @Post('cities')
-  @Auth(Role.ADMIN, Role.SUPER_USER)
+  @Auth(UserRole.DEVELOPER_ADMIN, UserRole.SUPER_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a city' })
   @ApiBody({ type: CreateCityDto })
@@ -171,7 +171,7 @@ export class LocationsController {
   }
 
   @Put('cities/:id')
-  @Auth(Role.ADMIN, Role.SUPER_USER)
+  @Auth(UserRole.DEVELOPER_ADMIN, UserRole.SUPER_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update a city' })
   @ApiParam({ name: 'id', type: String })
@@ -191,7 +191,7 @@ export class LocationsController {
   }
 
   @Delete('cities/:id')
-  @Auth(Role.ADMIN, Role.SUPER_USER)
+  @Auth(UserRole.DEVELOPER_ADMIN, UserRole.SUPER_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete a city' })
   @ApiParam({ name: 'id', type: String })
@@ -211,7 +211,7 @@ export class LocationsController {
   }
 
   @Post('neighborhoods')
-  @Auth(Role.ADMIN, Role.SUPER_USER)
+  @Auth(UserRole.DEVELOPER_ADMIN, UserRole.SUPER_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a neighborhood' })
   @ApiBody({ type: CreateNeighborhoodDto })
@@ -243,7 +243,7 @@ export class LocationsController {
   }
 
   @Put('neighborhoods/:id')
-  @Auth(Role.ADMIN, Role.SUPER_USER)
+  @Auth(UserRole.DEVELOPER_ADMIN, UserRole.SUPER_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update a neighborhood' })
   @ApiParam({ name: 'id', type: String })
@@ -263,7 +263,7 @@ export class LocationsController {
   }
 
   @Delete('neighborhoods/:id')
-  @Auth(Role.ADMIN, Role.SUPER_USER)
+  @Auth(UserRole.DEVELOPER_ADMIN, UserRole.SUPER_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete a neighborhood' })
   @ApiParam({ name: 'id', type: String })

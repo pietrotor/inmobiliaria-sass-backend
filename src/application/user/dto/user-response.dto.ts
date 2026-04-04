@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Role } from '@domain/user/value-objects/role.vo';
+import { UserRole } from '@domain/user/value-objects/role.vo';
 
 export class UserResponseDto {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
@@ -20,8 +20,8 @@ export class UserResponseDto {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440001' })
   organizationId: string;
 
-  @ApiProperty({ enum: Role, isArray: true, example: [Role.USER] })
-  roles: Role[];
+  @ApiProperty({ enum: UserRole, example: UserRole.DEVELOPER_SALES })
+  role: UserRole;
 
   @ApiProperty({ example: true })
   isActive: boolean;

@@ -18,6 +18,10 @@ import {
   UNIT_REPOSITORY,
 } from '@domain/unit/repositories/unit.repository';
 import {
+  UnitPriceHistoryRepository,
+  UNIT_PRICE_HISTORY_REPOSITORY,
+} from '@domain/unit/repositories/unit-price-history.repository';
+import {
   MediaRepository,
   MEDIA_REPOSITORY,
 } from '@domain/media/repositories/media.repository';
@@ -34,12 +38,15 @@ export class UpdateUnitUseCase {
     private readonly developerRepository: DeveloperRepository,
     @Inject(UNIT_REPOSITORY)
     private readonly unitRepository: UnitRepository,
+    @Inject(UNIT_PRICE_HISTORY_REPOSITORY)
+    private readonly priceHistoryRepository: UnitPriceHistoryRepository,
     @Inject(MEDIA_REPOSITORY)
     private readonly mediaRepository: MediaRepository,
   ) {}
 
   async execute(
     organizationId: string,
+    userId: string,
     projectId: string,
     unitId: string,
     dto: UpdateUnitDto,
@@ -76,14 +83,32 @@ export class UpdateUnitUseCase {
         );
       }
 
+      const { priceChangeReason, ...fields } = dto;
+
       const updateData: Record<string, unknown> = {};
-      if (dto.identifier !== undefined) updateData.identifier = dto.identifier;
-      if (dto.type !== undefined) updateData.type = dto.type;
-      if (dto.commissionPctOverride !== undefined)
-        updateData.commissionPctOverride = dto.commissionPctOverride;
-      if (dto.attributes !== undefined) updateData.attributes = dto.attributes;
-      if (dto.internalNotes !== undefined)
-        updateData.internalNotes = dto.internalNotes;
+      if (fields.identifier !== undefined)
+        updateData.identifier = fields.identifier;
+      if (fields.type !== undefined) updateData.type = fields.type;
+      if (fields.priceUSD !== undefined) updateData.priceUSD = fields.priceUSD;
+      if (fields.commissionPctOverride !== undefined)
+        updateData.commissionPctOverride = fields.commissionPctOverride;
+      if (fields.attributes !== undefined)
+        updateData.attributes = fields.attributes;
+      if (fields.internalNotes !== undefined)
+        updateData.internalNotes = fields.internalNotes;
+
+      if (
+        fields.priceUSD !== undefined &&
+        fields.priceUSD !== unit.priceUSD
+      ) {
+        await this.priceHistoryRepository.create({
+          unitId,
+          previousPriceUSD: unit.priceUSD,
+          newPriceUSD: fields.priceUSD,
+          changedByUserId: userId,
+          reason: priceChangeReason ?? 'Price updated',
+        });
+      }
 
       const updated = await this.unitRepository.update(
         unitId,

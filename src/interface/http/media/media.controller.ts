@@ -37,7 +37,7 @@ import { MediaResponseDto } from '@application/media/dto/media-response.dto';
 import { EntityType } from '@domain/media/value-objects/entity-type.vo';
 import { MediaRole } from '@domain/media/value-objects/media-role.vo';
 import { Auth } from '@interface/http/common';
-import { Role } from '@domain/user/value-objects/role.vo';
+import { UserRole } from '@domain/user/value-objects/role.vo';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
@@ -52,7 +52,7 @@ export class MediaController {
   ) {}
 
   @Post('upload')
-  @Auth(Role.ADMIN, Role.SUPER_USER)
+  @Auth(UserRole.DEVELOPER_ADMIN, UserRole.SUPER_ADMIN)
   @ApiBearerAuth()
   @UseInterceptors(FileInterceptor('file'))
   @ApiConsumes('multipart/form-data')
@@ -123,7 +123,7 @@ export class MediaController {
   }
 
   @Delete(':id')
-  @Auth(Role.ADMIN, Role.SUPER_USER)
+  @Auth(UserRole.DEVELOPER_ADMIN, UserRole.SUPER_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete a media file' })
   @ApiParam({ name: 'id', type: String })
@@ -143,7 +143,7 @@ export class MediaController {
   }
 
   @Delete(':entityType/:entityId')
-  @Auth(Role.ADMIN, Role.SUPER_USER)
+  @Auth(UserRole.DEVELOPER_ADMIN, UserRole.SUPER_ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete all media for an entity' })
   @ApiParam({ name: 'entityType', enum: EntityType })

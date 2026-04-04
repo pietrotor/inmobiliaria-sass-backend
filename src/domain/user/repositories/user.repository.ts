@@ -1,5 +1,5 @@
 import { User } from '../entities/user.entity';
-import { Role } from '../value-objects/role.vo';
+import { UserRole } from '../value-objects/role.vo';
 
 export interface CreateUserData {
   name: string;
@@ -8,7 +8,7 @@ export interface CreateUserData {
   phoneNumber: string;
   organizationId: string;
   password: string;
-  roles: Role[];
+  role: UserRole;
   isActive: boolean;
   deleted?: boolean;
 }
@@ -23,5 +23,4 @@ export interface UserRepository {
   deleteAll(): Promise<void>;
 }
 
-// Token for dependency injection
 export const USER_REPOSITORY = 'UserRepository';

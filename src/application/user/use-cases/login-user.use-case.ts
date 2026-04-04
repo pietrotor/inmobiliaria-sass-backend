@@ -45,7 +45,7 @@ export class LoginUserUseCase {
         email: user.email,
         phoneNumber: user.phoneNumber,
         organizationId: user.organizationId,
-        roles: user.roles,
+        role: user.role,
         isActive: user.isActive,
       },
       token: this.jwtService.sign({ id: user.id }),
