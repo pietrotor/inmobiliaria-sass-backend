@@ -14,10 +14,20 @@ export interface CreatePostSaleRequestData {
   registrationDate: Date;
 }
 
+export interface PostSaleFilters {
+  status?: string;
+  requestType?: string;
+}
+
 export interface PostSaleRequestRepository {
   create(data: CreatePostSaleRequestData): Promise<PostSaleRequest>;
   findById(id: string): Promise<PostSaleRequest | null>;
-  findByUnitId(unitId: string, limit: number, offset: number): Promise<PaginatedResult<PostSaleRequest>>;
+  findByUnitId(
+    unitId: string,
+    limit: number,
+    offset: number,
+    filters?: PostSaleFilters,
+  ): Promise<PaginatedResult<PostSaleRequest>>;
   findByDeveloperId(developerId: string, limit: number, offset: number): Promise<PaginatedResult<PostSaleRequest>>;
   findStale(staleDays: number): Promise<PostSaleRequest[]>;
   update(id: string, data: Partial<PostSaleRequest>): Promise<PostSaleRequest>;

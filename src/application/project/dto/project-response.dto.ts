@@ -1,7 +1,9 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ProjectStatus } from '@domain/project/value-objects/project-status.vo';
 import { ProjectVisibility } from '@domain/project/value-objects/project-visibility.vo';
+import { ProjectType } from '@domain/project/value-objects/project-type.vo';
 import { ProjectAmenity } from '@domain/project/value-objects/project-amenity.vo';
+import { ConstructionPhase } from '@domain/project/value-objects/construction-phase.vo';
 import { MediaResponseDto } from '@application/media/dto/media-response.dto';
 
 export class ProjectResponseDto {
@@ -32,11 +34,26 @@ export class ProjectResponseDto {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440004' })
   neighborhoodId: string;
 
+  @ApiPropertyOptional({ example: -16.5, nullable: true })
+  latitude: number | null;
+
+  @ApiPropertyOptional({ example: -68.15, nullable: true })
+  longitude: number | null;
+
+  @ApiProperty({ enum: ProjectType, example: ProjectType.VERTICAL })
+  projectType: ProjectType;
+
   @ApiProperty({ enum: ProjectStatus, example: ProjectStatus.DRAFT })
   status: ProjectStatus;
 
   @ApiProperty({ enum: ProjectVisibility, example: ProjectVisibility.PUBLIC })
   visibility: ProjectVisibility;
+
+  @ApiProperty({
+    enum: ConstructionPhase,
+    example: ConstructionPhase.PRE_LAUNCH,
+  })
+  constructionPhase: ConstructionPhase;
 
   @ApiPropertyOptional({
     example: '2027-06-30T00:00:00.000Z',
@@ -56,6 +73,12 @@ export class ProjectResponseDto {
     example: [ProjectAmenity.POOL, ProjectAmenity.GYM],
   })
   amenities: ProjectAmenity[];
+
+  @ApiProperty({
+    type: [String],
+    example: ['Sala de cine', 'Cancha de pádel'],
+  })
+  customAmenities: string[];
 
   @ApiProperty({ example: 2.5 })
   defaultCommissionPct: number;

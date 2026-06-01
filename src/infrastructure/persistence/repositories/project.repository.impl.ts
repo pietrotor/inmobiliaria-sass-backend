@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { eq, count, desc } from 'drizzle-orm';
+import { eq, count, desc, and, or, ilike } from 'drizzle-orm';
 
 import { Project } from '@domain/project/entities/project.entity';
 import {
   ProjectRepository,
   CreateProjectData,
+  ProjectFilters,
 } from '@domain/project/repositories/project.repository';
 import { PaginatedResult } from '@domain/common/interfaces/paginated-result.interface';
 import { DrizzleService } from '../drizzle/drizzle.service';
@@ -26,12 +27,17 @@ export class DrizzleProjectRepository implements ProjectRepository {
         countryId: data.countryId,
         cityId: data.cityId,
         neighborhoodId: data.neighborhoodId,
+        latitude: data.latitude,
+        longitude: data.longitude,
+        projectType: data.projectType,
         status: data.status,
         visibility: data.visibility,
+        constructionPhase: data.constructionPhase,
         deliveryDate: data.deliveryDate,
         totalFloors: data.totalFloors,
         totalUnits: data.totalUnits,
         amenities: data.amenities,
+        customAmenities: data.customAmenities,
         defaultCommissionPct: data.defaultCommissionPct,
         intentDeadlineHours: data.intentDeadlineHours,
       })
@@ -53,16 +59,32 @@ export class DrizzleProjectRepository implements ProjectRepository {
     developerId: string,
     limit: number,
     offset: number,
+    filters?: ProjectFilters,
   ): Promise<PaginatedResult<Project>> {
+    const conditions = [eq(projects.developerId, developerId)];
+
+    if (filters?.search?.trim()) {
+      const pattern = `%${filters.search.trim()}%`;
+      conditions.push(
+        or(ilike(projects.name, pattern), ilike(projects.address, pattern)),
+      );
+    }
+
+    if (filters?.status) {
+      conditions.push(eq(projects.status, filters.status));
+    }
+
+    const whereClause = and(...conditions);
+
     const [totalResult] = await this.drizzle.db
       .select({ count: count() })
       .from(projects)
-      .where(eq(projects.developerId, developerId));
+      .where(whereClause);
 
     const results = await this.drizzle.db
       .select()
       .from(projects)
-      .where(eq(projects.developerId, developerId))
+      .where(whereClause)
       .orderBy(desc(projects.createdAt))
       .limit(limit)
       .offset(offset);
@@ -111,14 +133,22 @@ export class DrizzleProjectRepository implements ProjectRepository {
     if (data.cityId !== undefined) updateData.cityId = data.cityId;
     if (data.neighborhoodId !== undefined)
       updateData.neighborhoodId = data.neighborhoodId;
+    if (data.latitude !== undefined) updateData.latitude = data.latitude;
+    if (data.longitude !== undefined) updateData.longitude = data.longitude;
+    if (data.projectType !== undefined)
+      updateData.projectType = data.projectType;
     if (data.status !== undefined) updateData.status = data.status;
     if (data.visibility !== undefined) updateData.visibility = data.visibility;
+    if (data.constructionPhase !== undefined)
+      updateData.constructionPhase = data.constructionPhase;
     if (data.deliveryDate !== undefined)
       updateData.deliveryDate = data.deliveryDate;
     if (data.totalFloors !== undefined)
       updateData.totalFloors = data.totalFloors;
     if (data.totalUnits !== undefined) updateData.totalUnits = data.totalUnits;
     if (data.amenities !== undefined) updateData.amenities = data.amenities;
+    if (data.customAmenities !== undefined)
+      updateData.customAmenities = data.customAmenities;
     if (data.defaultCommissionPct !== undefined)
       updateData.defaultCommissionPct = data.defaultCommissionPct;
     if (data.intentDeadlineHours !== undefined)

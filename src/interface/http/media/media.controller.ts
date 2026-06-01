@@ -39,7 +39,7 @@ import { MediaRole } from '@domain/media/value-objects/media-role.vo';
 import { Auth } from '@interface/http/common';
 import { UserRole } from '@domain/user/value-objects/role.vo';
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const MAX_FILE_SIZE = 25 * 1024 * 1024;
 
 @ApiTags('Media')
 @Controller('media')

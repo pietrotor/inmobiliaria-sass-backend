@@ -37,11 +37,21 @@ import {
   MediaRepository,
   MEDIA_REPOSITORY,
 } from '@domain/media/repositories/media.repository';
+import {
+  BuildingRepository,
+  BUILDING_REPOSITORY,
+} from '@domain/building/repositories/building.repository';
+import {
+  UnitTypologyRepository,
+  UNIT_TYPOLOGY_REPOSITORY,
+} from '@domain/unit-typology/repositories/unit-typology.repository';
 import { Organization } from '@domain/organization/entities/organization.entity';
 import { UserRole } from '@domain/user/value-objects/role.vo';
 import { ProjectStatus } from '@domain/project/value-objects/project-status.vo';
 import { ProjectVisibility } from '@domain/project/value-objects/project-visibility.vo';
+import { ProjectType } from '@domain/project/value-objects/project-type.vo';
 import { ProjectAmenity } from '@domain/project/value-objects/project-amenity.vo';
+import { ConstructionPhase } from '@domain/project/value-objects/construction-phase.vo';
 import { UnitStatus } from '@domain/unit/value-objects/unit-status.vo';
 import { UnitType } from '@domain/unit/value-objects/unit-type.vo';
 import { Orientation } from '@domain/unit/value-objects/orientation.vo';
@@ -54,6 +64,8 @@ import { DrizzleService } from '@infrastructure/persistence/drizzle/drizzle.serv
 import { media } from '@infrastructure/persistence/drizzle/schema/media.schema';
 import { units } from '@infrastructure/persistence/drizzle/schema/unit.schema';
 import { unitPriceHistory } from '@infrastructure/persistence/drizzle/schema/unit-price-history.schema';
+import { buildings } from '@infrastructure/persistence/drizzle/schema/building.schema';
+import { unitTypologies } from '@infrastructure/persistence/drizzle/schema/unit-typology.schema';
 import { projects } from '@infrastructure/persistence/drizzle/schema/project.schema';
 import { developers } from '@infrastructure/persistence/drizzle/schema/developer.schema';
 import { neighborhoods } from '@infrastructure/persistence/drizzle/schema/neighborhood.schema';
@@ -125,13 +137,53 @@ const SEED_COUNTRIES = [
 ];
 
 const SEED_CITIES: Record<string, string[]> = {
-  BO: ['La Paz', 'Santa Cruz', 'Cochabamba'],
+  BO: [
+    'La Paz',
+    'El Alto',
+    'Santa Cruz',
+    'Cochabamba',
+    'Sucre',
+    'Oruro',
+    'Potosí',
+    'Tarija',
+    'Trinidad',
+    'Cobija',
+  ],
 };
 
 const SEED_NEIGHBORHOODS: Record<string, string[]> = {
-  'La Paz': ['Calacoto', 'Sopocachi', 'San Miguel'],
-  'Santa Cruz': ['Equipetrol', 'Urbarí', 'Las Palmas'],
-  'Cochabamba': ['Queru Queru', 'Cala Cala', 'Sarco'],
+  'La Paz': [
+    'Calacoto',
+    'Sopocachi',
+    'San Miguel',
+    'Achumani',
+    'Obrajes',
+    'Miraflores',
+    'Centro',
+  ],
+  'El Alto': ['Ciudad Satélite', 'Villa Adela', '16 de Julio', 'Río Seco'],
+  'Santa Cruz': [
+    'Equipetrol',
+    'Urbarí',
+    'Las Palmas',
+    'Las Palmeras',
+    'Sirari',
+    'Centro',
+  ],
+  Cochabamba: [
+    'Queru Queru',
+    'Cala Cala',
+    'Sarco',
+    'Recoleta',
+    'Tupuraya',
+    'Centro',
+  ],
+  Sucre: ['Centro Histórico', 'La Recoleta', 'Aranjuez', 'Tucsupaya'],
+  Oruro: ['Centro', 'Sud', 'Norte', 'Este'],
+  'Potosí': ['Centro Histórico', 'San Roque', 'San Cristóbal', 'San Clemente'],
+  Tarija: ['Centro', 'El Molino', 'Las Panosas', 'La Loma'],
+  Trinidad: ['Centro', 'Pompeya', 'Cipriano Barace', 'Mariscal Sucre'],
+  Cobija: ['Centro', 'Mapajo', 'Jericó', 'Pando'],
 };
 
 const SEED_DEVELOPER = {
@@ -150,8 +202,8 @@ const SEED_PROJECTS = [
     address: 'Av. Ballivián #1234, Calacoto',
     neighborhoodName: 'Calacoto',
     cityName: 'La Paz',
+    projectType: ProjectType.VERTICAL,
     totalFloors: 12,
-    totalUnits: 48,
     amenities: [
       ProjectAmenity.POOL,
       ProjectAmenity.GYM,
@@ -170,8 +222,8 @@ const SEED_PROJECTS = [
     address: 'Calle 21 #500, Equipetrol',
     neighborhoodName: 'Equipetrol',
     cityName: 'Santa Cruz',
-    totalFloors: 5,
-    totalUnits: 20,
+    projectType: ProjectType.HORIZONTAL,
+    totalFloors: 2,
     amenities: [
       ProjectAmenity.POOL,
       ProjectAmenity.PLAYGROUND,
@@ -190,8 +242,8 @@ const SEED_PROJECTS = [
     address: 'Av. América #890',
     neighborhoodName: 'Queru Queru',
     cityName: 'Cochabamba',
+    projectType: ProjectType.VERTICAL,
     totalFloors: 18,
-    totalUnits: 72,
     amenities: [
       ProjectAmenity.COWORKING,
       ProjectAmenity.GYM,
@@ -204,6 +256,164 @@ const SEED_PROJECTS = [
     deliveryDate: new Date('2028-03-01'),
   },
 ];
+
+interface SeedBuilding {
+  name: string;
+  totalFloors: number;
+  sortOrder: number;
+}
+
+const SEED_BUILDINGS: Record<string, SeedBuilding[]> = {
+  'Edificio Vitrubio': [
+    { name: 'Torre Principal', totalFloors: 12, sortOrder: 0 },
+  ],
+  'Torre Milenio': [
+    { name: 'Torre A - Residencial', totalFloors: 18, sortOrder: 0 },
+    { name: 'Torre B - Empresarial', totalFloors: 14, sortOrder: 1 },
+  ],
+};
+
+interface SeedTypology {
+  name: string;
+  unitType: UnitType;
+  basePriceUsd: number | null;
+  baseAttributes: UnitAttributes | Record<string, unknown>;
+  description: string | null;
+}
+
+const SEED_TYPOLOGIES: Record<string, SeedTypology[]> = {
+  'Edificio Vitrubio': [
+    {
+      name: 'Departamento 2 Dormitorios',
+      unitType: UnitType.APARTMENT,
+      basePriceUsd: 125000,
+      baseAttributes: {
+        type: 'APARTMENT',
+        floor: 0,
+        sqm: 85.5,
+        sqmUsable: 72.0,
+        bedrooms: 2,
+        bathrooms: 2,
+        halfBathrooms: 1,
+        orientation: null,
+        customTags: ['Balcón', 'Vista norte'],
+      },
+      description: 'Departamentos de 2 dormitorios con balcón y vista norte',
+    },
+    {
+      name: 'Departamento 3 Dormitorios Premium',
+      unitType: UnitType.APARTMENT,
+      basePriceUsd: 155000,
+      baseAttributes: {
+        type: 'APARTMENT',
+        floor: 0,
+        sqm: 120.0,
+        sqmUsable: 105.0,
+        bedrooms: 3,
+        bathrooms: 2,
+        halfBathrooms: 1,
+        orientation: null,
+        customTags: ['Balcón', 'Parrillero', 'Vestidor', 'Suite master', 'Acabados premium'],
+      },
+      description: 'Departamentos premium de 3 dormitorios con cuarto de servicio',
+    },
+    {
+      name: 'Parqueo Cubierto',
+      unitType: UnitType.PARKING,
+      basePriceUsd: 15000,
+      baseAttributes: {
+        type: 'PARKING',
+        level: '',
+        spotNumber: '',
+        isCovered: true,
+        sqm: 12.5,
+        customTags: [],
+      },
+      description: null,
+    },
+  ],
+  'Condominio Los Jardines': [
+    {
+      name: 'Casa Estándar',
+      unitType: UnitType.HOUSE,
+      basePriceUsd: 95000,
+      baseAttributes: {
+        type: 'HOUSE',
+        lotNumber: '',
+        lotAreaSqm: 200,
+        builtAreaSqm: 140,
+        floors: 2,
+        bedrooms: 3,
+        bathrooms: 2,
+        halfBathrooms: 1,
+        hasGarden: true,
+        hasGarage: true,
+        hasTerrace: false,
+        orientation: null,
+        customTags: ['Patio trasero'],
+      },
+      description: 'Casas de 3 dormitorios con jardín y garaje privado',
+    },
+    {
+      name: 'Townhouse Esquina',
+      unitType: UnitType.TOWNHOUSE,
+      basePriceUsd: 110000,
+      baseAttributes: {
+        type: 'TOWNHOUSE',
+        lotNumber: '',
+        lotAreaSqm: 160,
+        builtAreaSqm: 120,
+        floors: 2,
+        bedrooms: 3,
+        bathrooms: 2,
+        halfBathrooms: 0,
+        position: 'CORNER',
+        hasGarden: true,
+        hasGarage: true,
+        hasTerrace: true,
+        orientation: null,
+        customTags: ['Esquina', 'Doble fachada'],
+      },
+      description: 'Townhouses en esquina con terraza y jardín',
+    },
+  ],
+  'Torre Milenio': [
+    {
+      name: 'Oficina Estándar',
+      unitType: UnitType.OFFICE,
+      basePriceUsd: 180000,
+      baseAttributes: {
+        type: 'OFFICE',
+        floor: 0,
+        sqm: 65.0,
+        sqmUsable: 58.0,
+        bedrooms: null,
+        bathrooms: 1,
+        halfBathrooms: 1,
+        orientation: null,
+        customTags: ['Smart office', 'Cableado estructurado'],
+      },
+      description: 'Oficinas con tecnología smart office',
+    },
+    {
+      name: 'Departamento 2 Dormitorios',
+      unitType: UnitType.APARTMENT,
+      basePriceUsd: 195000,
+      baseAttributes: {
+        type: 'APARTMENT',
+        floor: 0,
+        sqm: 95.0,
+        sqmUsable: 82.0,
+        bedrooms: 2,
+        bathrooms: 2,
+        halfBathrooms: 0,
+        orientation: null,
+        customTags: ['Balcón', 'Pisos altos'],
+      },
+      description: 'Departamentos residenciales de 2 dormitorios',
+    },
+  ],
+};
 
 interface SeedUnit {
   identifier: string;
@@ -229,9 +439,7 @@ const SEED_UNITS: Record<string, SeedUnit[]> = {
         bathrooms: 2,
         halfBathrooms: 1,
         orientation: Orientation.NORTH,
-        hasBalcony: true,
-        hasLaundryRoom: false,
-        hasServantRoom: false,
+        customTags: ['Balcón', 'Vista norte'],
       },
     },
     {
@@ -248,9 +456,7 @@ const SEED_UNITS: Record<string, SeedUnit[]> = {
         bathrooms: 2,
         halfBathrooms: 1,
         orientation: Orientation.NORTHEAST,
-        hasBalcony: true,
-        hasLaundryRoom: true,
-        hasServantRoom: true,
+        customTags: ['Balcón', 'Parrillero', 'Vestidor', 'Suite master', 'Acabados premium', 'Vista panorámica'],
       },
     },
     {
@@ -264,6 +470,7 @@ const SEED_UNITS: Record<string, SeedUnit[]> = {
         spotNumber: 'E-04',
         isCovered: true,
         sqm: 12.5,
+        customTags: [],
       },
     },
     {
@@ -275,40 +482,66 @@ const SEED_UNITS: Record<string, SeedUnit[]> = {
         type: 'STORAGE',
         level: 'S2',
         sqm: 4.0,
+        customTags: [],
       },
     },
   ],
   'Condominio Los Jardines': [
     {
       identifier: 'Casa 1A',
-      type: UnitType.APARTMENT,
+      type: UnitType.HOUSE,
       priceUSD: 95000,
       commissionPctOverride: null,
       attributes: {
-        type: 'APARTMENT',
-        floor: 1,
-        sqm: 110.0,
-        sqmUsable: 98.0,
+        type: 'HOUSE',
+        lotNumber: 'M1-L01',
+        lotAreaSqm: 200,
+        builtAreaSqm: 140,
+        floors: 2,
         bedrooms: 3,
         bathrooms: 2,
-        halfBathrooms: 0,
+        halfBathrooms: 1,
+        hasGarden: true,
+        hasGarage: true,
+        hasTerrace: false,
         orientation: Orientation.EAST,
-        hasBalcony: false,
-        hasLaundryRoom: true,
-        hasServantRoom: false,
+        customTags: ['Patio trasero'],
       },
     },
     {
-      identifier: 'P-01',
-      type: UnitType.PARKING,
-      priceUSD: 12000,
+      identifier: 'Casa 2B',
+      type: UnitType.TOWNHOUSE,
+      priceUSD: 110000,
       commissionPctOverride: null,
       attributes: {
-        type: 'PARKING',
-        level: 'PB',
-        spotNumber: 'P-01',
-        isCovered: false,
-        sqm: 15.0,
+        type: 'TOWNHOUSE',
+        lotNumber: 'M1-L02',
+        lotAreaSqm: 160,
+        builtAreaSqm: 120,
+        floors: 2,
+        bedrooms: 3,
+        bathrooms: 2,
+        halfBathrooms: 0,
+        position: 'CORNER' as const,
+        hasGarden: true,
+        hasGarage: true,
+        hasTerrace: true,
+        orientation: Orientation.NORTH,
+        customTags: ['Esquina', 'Doble fachada'],
+      },
+    },
+    {
+      identifier: 'Lote 3C',
+      type: UnitType.LOT,
+      priceUSD: 45000,
+      commissionPctOverride: null,
+      attributes: {
+        type: 'LOT',
+        lotNumber: 'M2-L01',
+        areaSqm: 250,
+        frontMeters: 10,
+        orientation: Orientation.WEST,
+        customTags: [],
       },
     },
   ],
@@ -327,9 +560,7 @@ const SEED_UNITS: Record<string, SeedUnit[]> = {
         bathrooms: 1,
         halfBathrooms: 1,
         orientation: Orientation.WEST,
-        hasBalcony: false,
-        hasLaundryRoom: false,
-        hasServantRoom: false,
+        customTags: ['Smart office', 'Cableado estructurado'],
       },
     },
     {
@@ -346,9 +577,7 @@ const SEED_UNITS: Record<string, SeedUnit[]> = {
         bathrooms: 2,
         halfBathrooms: 0,
         orientation: null,
-        hasBalcony: false,
-        hasLaundryRoom: false,
-        hasServantRoom: false,
+        customTags: ['Esquina', 'Doble vitrina'],
       },
     },
     {
@@ -365,9 +594,7 @@ const SEED_UNITS: Record<string, SeedUnit[]> = {
         bathrooms: 2,
         halfBathrooms: 0,
         orientation: Orientation.SOUTH,
-        hasBalcony: true,
-        hasLaundryRoom: false,
-        hasServantRoom: false,
+        customTags: ['Balcón', 'Pisos altos'],
       },
     },
   ],
@@ -423,6 +650,10 @@ export class SeedUsersUseCase {
     private readonly unitRepository: UnitRepository,
     @Inject(MEDIA_REPOSITORY)
     private readonly mediaRepository: MediaRepository,
+    @Inject(BUILDING_REPOSITORY)
+    private readonly buildingRepository: BuildingRepository,
+    @Inject(UNIT_TYPOLOGY_REPOSITORY)
+    private readonly unitTypologyRepository: UnitTypologyRepository,
     private readonly drizzle: DrizzleService,
   ) {}
 
@@ -446,7 +677,9 @@ export class SeedUsersUseCase {
         neighborhoodMap,
       );
       await this.createProjectMedia(createdProjects);
-      const unitCount = await this.createUnits(createdProjects);
+      const buildingMap = await this.createBuildings(createdProjects);
+      const typologyMap = await this.createTypologies(createdProjects);
+      const unitCount = await this.createUnits(createdProjects, buildingMap, typologyMap);
       await this.createUnitMedia(createdProjects);
 
       const brokerUser = createdUsers.find(
@@ -479,6 +712,8 @@ export class SeedUsersUseCase {
           neighborhoods: neighborhoodMap.size,
           developers: 1,
           projects: createdProjects.length,
+          buildings: buildingMap.size,
+          typologies: typologyMap.size,
           units: unitCount,
           ...seedExtras,
         },
@@ -509,6 +744,8 @@ export class SeedUsersUseCase {
     await this.drizzle.db.delete(media);
     await this.drizzle.db.delete(unitPriceHistory);
     await this.drizzle.db.delete(units);
+    await this.drizzle.db.delete(unitTypologies);
+    await this.drizzle.db.delete(buildings);
     await this.drizzle.db.delete(projects);
     await this.drizzle.db.delete(developers);
     await this.drizzle.db.delete(users);
@@ -652,12 +889,17 @@ export class SeedUsersUseCase {
         countryId,
         cityId,
         neighborhoodId,
+        latitude: null,
+        longitude: null,
+        projectType: projectData.projectType,
         status: ProjectStatus.DRAFT,
         visibility: ProjectVisibility.PUBLIC,
+        constructionPhase: ConstructionPhase.PRE_LAUNCH,
         deliveryDate: projectData.deliveryDate,
         totalFloors: projectData.totalFloors,
-        totalUnits: projectData.totalUnits,
+        totalUnits: 0,
         amenities: projectData.amenities,
+        customAmenities: [],
         defaultCommissionPct: projectData.defaultCommissionPct,
         intentDeadlineHours: projectData.intentDeadlineHours,
       });
@@ -666,6 +908,60 @@ export class SeedUsersUseCase {
     }
 
     return created;
+  }
+
+  private async createBuildings(
+    projectList: { id: string; name: string }[],
+  ): Promise<Map<string, string>> {
+    console.log('[Seed] Creating buildings...');
+    const buildingMap = new Map<string, string>();
+
+    for (const project of projectList) {
+      const buildingDefs = SEED_BUILDINGS[project.name];
+      if (!buildingDefs) continue;
+
+      for (const def of buildingDefs) {
+        const building = await this.buildingRepository.create({
+          projectId: project.id,
+          name: def.name,
+          totalFloors: def.totalFloors,
+          sortOrder: def.sortOrder,
+        });
+        buildingMap.set(`${project.name}::${def.name}`, building.id);
+        console.log(`[Seed] Created building: ${def.name} (${project.name})`);
+      }
+    }
+
+    return buildingMap;
+  }
+
+  private async createTypologies(
+    projectList: { id: string; name: string }[],
+  ): Promise<Map<string, string>> {
+    console.log('[Seed] Creating typologies...');
+    const typologyMap = new Map<string, string>();
+
+    for (const project of projectList) {
+      const typologyDefs = SEED_TYPOLOGIES[project.name];
+      if (!typologyDefs) continue;
+
+      for (let i = 0; i < typologyDefs.length; i++) {
+        const def = typologyDefs[i];
+        const typology = await this.unitTypologyRepository.create({
+          projectId: project.id,
+          name: def.name,
+          unitType: def.unitType,
+          basePriceUsd: def.basePriceUsd,
+          baseAttributes: def.baseAttributes,
+          description: def.description,
+          sortOrder: i,
+        });
+        typologyMap.set(`${project.name}::${def.name}`, typology.id);
+        console.log(`[Seed] Created typology: ${def.name} (${project.name})`);
+      }
+    }
+
+    return typologyMap;
   }
 
   private async createProjectMedia(
@@ -709,16 +1005,72 @@ export class SeedUsersUseCase {
 
   private async createUnits(
     projectList: { id: string; name: string }[],
+    buildingMap: Map<string, string>,
+    typologyMap: Map<string, string>,
   ): Promise<number> {
     console.log('[Seed] Creating units...');
     let totalCreated = 0;
 
+    const unitBuildingMapping: Record<string, Record<string, string>> = {
+      'Edificio Vitrubio': {
+        default: 'Torre Principal',
+      },
+      'Torre Milenio': {
+        OFFICE: 'Torre B - Empresarial',
+        COMMERCIAL: 'Torre B - Empresarial',
+        APARTMENT: 'Torre A - Residencial',
+      },
+    };
+
+    const unitTypologyMapping: Record<string, Record<string, string>> = {
+      'Edificio Vitrubio': {
+        'Apto 301': 'Departamento 2 Dormitorios',
+        'Apto 501': 'Departamento 3 Dormitorios Premium',
+        'E-04': 'Parqueo Cubierto',
+      },
+      'Condominio Los Jardines': {
+        'Casa 1A': 'Casa Estándar',
+        'Casa 2B': 'Townhouse Esquina',
+      },
+      'Torre Milenio': {
+        'Oficina 8A': 'Oficina Estándar',
+        'Apto 1201': 'Departamento 2 Dormitorios',
+      },
+    };
+
     for (const project of projectList) {
       const unitDefs = SEED_UNITS[project.name] ?? [];
+      const bMapping = unitBuildingMapping[project.name];
+      const tMapping = unitTypologyMapping[project.name];
 
       for (const unitData of unitDefs) {
+        let buildingId: string | null = null;
+        if (bMapping) {
+          const buildingName = bMapping[unitData.type] ?? bMapping['default'] ?? null;
+          if (buildingName) {
+            buildingId = buildingMap.get(`${project.name}::${buildingName}`) ?? null;
+          }
+        }
+
+        const typologyName = tMapping?.[unitData.identifier];
+        if (!typologyName) {
+          throw new Error(
+            `[Seed] Unit '${unitData.identifier}' in project '${project.name}' has no typology mapping. Add an entry in unitTypologyMapping.`,
+          );
+        }
+        const typologyId = typologyMap.get(
+          `${project.name}::${typologyName}`,
+        );
+        if (!typologyId) {
+          throw new Error(
+            `[Seed] Typology '${typologyName}' not found for project '${project.name}'. Make sure the typology is defined in SEED_TYPOLOGIES.`,
+          );
+        }
+
         await this.unitRepository.create({
           projectId: project.id,
+          buildingId,
+          typologyId,
           identifier: unitData.identifier,
           type: unitData.type,
           status: UnitStatus.AVAILABLE,
@@ -750,11 +1102,14 @@ export class SeedUsersUseCase {
       );
 
       for (const unit of createdUnits.data) {
-        if (
-          unit.type === UnitType.APARTMENT ||
-          unit.type === UnitType.OFFICE ||
-          unit.type === UnitType.COMMERCIAL
-        ) {
+        const habitableTypes = [
+          UnitType.APARTMENT,
+          UnitType.OFFICE,
+          UnitType.COMMERCIAL,
+          UnitType.HOUSE,
+          UnitType.TOWNHOUSE,
+        ];
+        if (habitableTypes.includes(unit.type)) {
           await this.mediaRepository.create({
             entityType: EntityType.UNIT,
             entityId: unit.id,

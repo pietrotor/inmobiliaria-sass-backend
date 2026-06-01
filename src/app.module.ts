@@ -19,6 +19,8 @@ import { DevelopersModule } from './interface/http/developers/developers.module'
 import { ProjectsModule } from './interface/http/projects/projects.module';
 import { FilesModule } from './interface/http/files/files.module';
 import { UnitsModule } from './interface/http/units/units.module';
+import { BuildingsModule } from './interface/http/buildings/buildings.module';
+import { UnitTypologiesModule } from './interface/http/unit-typologies/unit-typologies.module';
 import { MediaModule } from './interface/http/media/media.module';
 import { BrokersModule } from './interface/http/brokers/brokers.module';
 import { MarketplaceModule } from './interface/http/marketplace/marketplace.module';
@@ -51,6 +53,8 @@ import { PostSaleModule } from './interface/http/post-sale/post-sale.module';
     ProjectsModule,
     FilesModule,
     UnitsModule,
+    BuildingsModule,
+    UnitTypologiesModule,
     MediaModule,
     BrokersModule,
     LeadsModule,

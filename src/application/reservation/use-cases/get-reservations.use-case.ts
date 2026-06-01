@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import {
   RESERVATION_REPOSITORY,
+  ReservationFilters,
   ReservationRepository,
 } from '@domain/reservation/repositories/reservation.repository';
 import {
@@ -23,7 +24,12 @@ export class GetReservationsUseCase {
     private readonly developerRepo: DeveloperRepository,
   ) {}
 
-  async execute(organizationId: string, limit: number, offset: number) {
+  async execute(
+    organizationId: string,
+    limit: number,
+    offset: number,
+    filters?: ReservationFilters,
+  ) {
     try {
       const developer =
         await this.developerRepo.findByOrganizationId(organizationId);
@@ -32,6 +38,7 @@ export class GetReservationsUseCase {
         developer.id,
         limit,
         offset,
+        filters,
       );
     } catch (error) {
       if (error instanceof HttpException) throw error;

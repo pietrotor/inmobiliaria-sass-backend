@@ -7,6 +7,7 @@ import {
 import {
   ProjectRepository,
   PROJECT_REPOSITORY,
+  ProjectFilters,
 } from '@domain/project/repositories/project.repository';
 import {
   DeveloperRepository,
@@ -31,7 +32,11 @@ export class GetProjectsUseCase {
     private readonly mediaRepository: MediaRepository,
   ) {}
 
-  async execute(organizationId: string, pagination: PaginationDto) {
+  async execute(
+    organizationId: string,
+    pagination: PaginationDto,
+    filters?: ProjectFilters,
+  ) {
     try {
       const developer =
         await this.developerRepository.findByOrganizationId(organizationId);
@@ -49,6 +54,7 @@ export class GetProjectsUseCase {
         developer.id,
         limit,
         offset,
+        filters,
       );
 
       const data = await enrichProjectsWithMedia(

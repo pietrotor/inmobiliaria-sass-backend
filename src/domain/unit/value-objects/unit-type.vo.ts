@@ -4,4 +4,7 @@ export enum UnitType {
   COMMERCIAL = 'COMMERCIAL',
   PARKING = 'PARKING',
   STORAGE = 'STORAGE',
+  HOUSE = 'HOUSE',
+  TOWNHOUSE = 'TOWNHOUSE',
+  LOT = 'LOT',
 }

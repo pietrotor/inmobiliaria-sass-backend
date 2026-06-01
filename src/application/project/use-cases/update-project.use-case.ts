@@ -74,15 +74,20 @@ export class UpdateProjectUseCase {
       if (dto.cityId !== undefined) updateData.cityId = dto.cityId;
       if (dto.neighborhoodId !== undefined)
         updateData.neighborhoodId = dto.neighborhoodId;
+      if (dto.latitude !== undefined) updateData.latitude = dto.latitude;
+      if (dto.longitude !== undefined) updateData.longitude = dto.longitude;
       if (dto.visibility !== undefined) updateData.visibility = dto.visibility;
+      if (dto.constructionPhase !== undefined)
+        updateData.constructionPhase = dto.constructionPhase;
       if (dto.deliveryDate !== undefined)
         updateData.deliveryDate = dto.deliveryDate
           ? new Date(dto.deliveryDate)
           : null;
       if (dto.totalFloors !== undefined)
         updateData.totalFloors = dto.totalFloors;
-      if (dto.totalUnits !== undefined) updateData.totalUnits = dto.totalUnits;
       if (dto.amenities !== undefined) updateData.amenities = dto.amenities;
+      if (dto.customAmenities !== undefined)
+        updateData.customAmenities = dto.customAmenities;
       if (dto.defaultCommissionPct !== undefined)
         updateData.defaultCommissionPct = dto.defaultCommissionPct;
       if (dto.intentDeadlineHours !== undefined)

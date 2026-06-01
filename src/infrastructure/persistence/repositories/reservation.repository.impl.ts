@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { eq, and, sql, desc, count, lt } from 'drizzle-orm';
+import { eq, and, sql, desc, count, lt, ilike } from 'drizzle-orm';
 
 import { Reservation } from '@domain/reservation/entities/reservation.entity';
 import {
   ReservationRepository,
   CreateReservationData,
+  ReservationFilters,
 } from '@domain/reservation/repositories/reservation.repository';
 import { PaginatedResult } from '@domain/common/interfaces/paginated-result.interface';
 import { DrizzleService } from '../drizzle/drizzle.service';
@@ -51,16 +52,28 @@ export class DrizzleReservationRepository implements ReservationRepository {
     developerId: string,
     limit: number,
     offset: number,
+    filters?: ReservationFilters,
   ): Promise<PaginatedResult<Reservation>> {
+    const conditions = [eq(reservations.developerId, developerId)];
+    if (filters?.search) {
+      conditions.push(
+        ilike(reservations.clientName, `%${filters.search}%`),
+      );
+    }
+    if (filters?.status) {
+      conditions.push(eq(reservations.status, filters.status as any));
+    }
+    const where = and(...conditions);
+
     const [totalResult] = await this.drizzle.db
       .select({ count: count() })
       .from(reservations)
-      .where(eq(reservations.developerId, developerId));
+      .where(where);
 
     const results = await this.drizzle.db
       .select()
       .from(reservations)
-      .where(eq(reservations.developerId, developerId))
+      .where(where)
       .orderBy(desc(reservations.createdAt))
       .limit(limit)
       .offset(offset);

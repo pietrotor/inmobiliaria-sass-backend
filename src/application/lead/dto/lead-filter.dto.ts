@@ -18,4 +18,9 @@ export class LeadFilterDto extends PaginationDto {
   @IsOptional()
   @IsString()
   nationalId?: string;
+
+  @ApiPropertyOptional({ description: 'Search by full name or phone' })
+  @IsOptional()
+  @IsString()
+  search?: string;
 }

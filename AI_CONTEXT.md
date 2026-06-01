@@ -172,9 +172,10 @@ interface HabitableUnitAttributes {
   bathrooms: number | null
   halfBathrooms: number | null
   orientation: 'NORTH'|'SOUTH'|'EAST'|'WEST'|'NORTHEAST'|'NORTHWEST'|'SOUTHEAST'|'SOUTHWEST' | null
-  hasBalcony: boolean
+  balconies: number          // 0 = none, 2 = double balcony, ...
   hasLaundryRoom: boolean
-  hasServantRoom: boolean   // "cuarto de empleada" — relevant selling point in Bolivia
+  servantRooms: number       // "cuarto de empleada" — relevant selling point in Bolivia
+  customTags: string[]       // free-form promo tags ("Jacuzzi privado", "Vista panorámica")
   floorPlanUrl: string | null
   renderUrl: string | null
 }
@@ -185,12 +186,14 @@ interface ParkingAttributes {
   spotNumber: string // "04", "E-12"
   isCovered: boolean
   sqm: number | null
+  customTags: string[]
 }
 
 interface StorageAttributes {
   type: 'STORAGE'
   level: string | null
   sqm: number | null
+  customTags: string[]
 }
 
 // ── CORE ENTITIES ──────────────────────────────────────────

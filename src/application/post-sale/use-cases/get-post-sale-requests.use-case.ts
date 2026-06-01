@@ -2,6 +2,7 @@ import { Inject, Injectable, HttpException } from '@nestjs/common';
 import {
   POST_SALE_REQUEST_REPOSITORY,
   PostSaleRequestRepository,
+  PostSaleFilters,
 } from '@domain/post-sale/repositories/post-sale-request.repository';
 import { DatabaseErrorHandler } from '@infrastructure/errors/database-error.handler';
 
@@ -12,9 +13,14 @@ export class GetPostSaleRequestsUseCase {
     private readonly repo: PostSaleRequestRepository,
   ) {}
 
-  async execute(unitId: string, limit: number, offset: number) {
+  async execute(
+    unitId: string,
+    limit: number,
+    offset: number,
+    filters?: PostSaleFilters,
+  ) {
     try {
-      return await this.repo.findByUnitId(unitId, limit, offset);
+      return await this.repo.findByUnitId(unitId, limit, offset, filters);
     } catch (error) {
       if (error instanceof HttpException) throw error;
       DatabaseErrorHandler.handle(error, 'GetPostSaleRequestsUseCase');

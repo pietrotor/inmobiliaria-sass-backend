@@ -1,6 +1,13 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsEnum, IsInt, IsNumber, IsOptional, Min } from 'class-validator';
+import {
+  IsEnum,
+  IsInt,
+  IsNumber,
+  IsOptional,
+  IsUUID,
+  Min,
+} from 'class-validator';
 import { UnitStatus } from '@domain/unit/value-objects/unit-status.vo';
 import { UnitType } from '@domain/unit/value-objects/unit-type.vo';
 import { PaginationDto } from '@application/common/dto/pagination.dto';
@@ -36,4 +43,14 @@ export class UnitFilterDto extends PaginationDto {
   @IsOptional()
   @Type(() => Number)
   floor?: number;
+
+  @ApiPropertyOptional({ description: 'Filter by building ID' })
+  @IsUUID()
+  @IsOptional()
+  buildingId?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by typology ID' })
+  @IsUUID()
+  @IsOptional()
+  typologyId?: string;
 }

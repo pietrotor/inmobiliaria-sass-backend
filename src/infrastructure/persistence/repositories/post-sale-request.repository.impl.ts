@@ -5,6 +5,7 @@ import { PostSaleRequest } from '@domain/post-sale/entities/post-sale-request.en
 import {
   PostSaleRequestRepository,
   CreatePostSaleRequestData,
+  PostSaleFilters,
 } from '@domain/post-sale/repositories/post-sale-request.repository';
 import { PaginatedResult } from '@domain/common/interfaces/paginated-result.interface';
 import { DrizzleService } from '../drizzle/drizzle.service';
@@ -47,16 +48,29 @@ export class DrizzlePostSaleRequestRepository
     unitId: string,
     limit: number,
     offset: number,
+    filters?: PostSaleFilters,
   ): Promise<PaginatedResult<PostSaleRequest>> {
+    const conditions = [eq(postSaleRequests.unitId, unitId)];
+    if (filters?.status !== undefined) {
+      conditions.push(eq(postSaleRequests.status, filters.status as any));
+    }
+    if (filters?.requestType !== undefined) {
+      conditions.push(
+        eq(postSaleRequests.requestType, filters.requestType as any),
+      );
+    }
+    const whereClause =
+      conditions.length === 1 ? conditions[0] : and(...conditions);
+
     const [totalResult] = await this.drizzle.db
       .select({ count: count() })
       .from(postSaleRequests)
-      .where(eq(postSaleRequests.unitId, unitId));
+      .where(whereClause);
 
     const results = await this.drizzle.db
       .select()
       .from(postSaleRequests)
-      .where(eq(postSaleRequests.unitId, unitId))
+      .where(whereClause)
       .orderBy(desc(postSaleRequests.createdAt))
       .limit(limit)
       .offset(offset);

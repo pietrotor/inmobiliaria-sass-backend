@@ -21,7 +21,7 @@ import { CreateReservationUseCase } from '@application/reservation/use-cases/cre
 import { GetReservationsUseCase } from '@application/reservation/use-cases/get-reservations.use-case';
 import { UpdateReservationStatusUseCase } from '@application/reservation/use-cases/update-reservation-status.use-case';
 import { CreateReservationDto } from '@application/reservation/dto/create-reservation.dto';
-import { PaginationDto } from '@application/common/dto/pagination.dto';
+import { ReservationFilterDto } from '@application/reservation/dto/reservation-filter.dto';
 import { ReservationStatus } from '@domain/reservation/value-objects/reservation-status.vo';
 
 import { Auth, GetUser } from '@interface/http/common';
@@ -50,11 +50,13 @@ export class ReservationsController {
   @Auth(UserRole.DEVELOPER_ADMIN, UserRole.DEVELOPER_SALES)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get reservations for developer' })
-  getAll(@GetUser() user: User, @Query() pagination: PaginationDto) {
+  getAll(@GetUser() user: User, @Query() filterDto: ReservationFilterDto) {
+    const { limit, offset, ...filters } = filterDto;
     return this.getReservationsUseCase.execute(
       user.organizationId,
-      pagination.limit,
-      pagination.offset,
+      limit,
+      offset,
+      Object.keys(filters).length > 0 ? filters : undefined,
     );
   }
 

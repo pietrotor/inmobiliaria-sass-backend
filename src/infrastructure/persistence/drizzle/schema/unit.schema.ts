@@ -5,33 +5,26 @@ import {
   real,
   text,
   timestamp,
-  pgEnum,
   jsonb,
 } from 'drizzle-orm/pg-core';
 import { projects } from './project.schema';
+import { buildings } from './building.schema';
+import { unitTypologies } from './unit-typology.schema';
+import { unitStatusEnum, unitTypeEnum } from './unit-enums.schema';
 
-export const unitStatusEnum = pgEnum('unit_status', [
-  'AVAILABLE',
-  'WITH_INTEREST',
-  'RESERVED',
-  'SOLD',
-  'SUSPENDED',
-  'UNAVAILABLE',
-]);
-
-export const unitTypeEnum = pgEnum('unit_type', [
-  'APARTMENT',
-  'OFFICE',
-  'COMMERCIAL',
-  'PARKING',
-  'STORAGE',
-]);
+export { unitStatusEnum, unitTypeEnum };
 
 export const units = pgTable('unit', {
   id: uuid('id').primaryKey().defaultRandom(),
   projectId: uuid('project_id')
     .notNull()
     .references(() => projects.id, { onDelete: 'cascade' }),
+  buildingId: uuid('building_id').references(() => buildings.id, {
+    onDelete: 'cascade',
+  }),
+  typologyId: uuid('typology_id')
+    .notNull()
+    .references(() => unitTypologies.id, { onDelete: 'restrict' }),
   identifier: varchar('identifier', { length: 100 }).notNull(),
   type: unitTypeEnum('type').notNull(),
   status: unitStatusEnum('status').notNull().default('AVAILABLE'),

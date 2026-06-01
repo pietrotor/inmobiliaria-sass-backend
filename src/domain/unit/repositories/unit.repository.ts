@@ -8,6 +8,8 @@ export const UNIT_REPOSITORY = 'UNIT_REPOSITORY';
 
 export interface CreateUnitData {
   projectId: string;
+  buildingId: string | null;
+  typologyId: string;
   identifier: string;
   type: UnitType;
   status: UnitStatus;
@@ -23,10 +25,13 @@ export interface UnitFilters {
   minPrice?: number;
   maxPrice?: number;
   floor?: number;
+  buildingId?: string;
+  typologyId?: string;
 }
 
 export interface UnitRepository {
   create(data: CreateUnitData): Promise<Unit>;
+  createMany(data: CreateUnitData[]): Promise<number>;
   findById(id: string): Promise<Unit | null>;
   findByProjectId(
     projectId: string,
@@ -34,6 +39,7 @@ export interface UnitRepository {
     offset: number,
     filters?: UnitFilters,
   ): Promise<PaginatedResult<Unit>>;
+  findIdentifiersByProjectId(projectId: string): Promise<string[]>;
   update(id: string, data: Partial<Unit>): Promise<Unit>;
   delete(id: string): Promise<void>;
   countByProjectId(projectId: string): Promise<number>;

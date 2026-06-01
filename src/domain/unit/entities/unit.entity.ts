@@ -5,6 +5,8 @@ import { UnitAttributes } from '../value-objects/unit-attributes.vo';
 export interface UnitProps {
   id: string;
   projectId: string;
+  buildingId: string | null;
+  typologyId: string;
   identifier: string;
   type: UnitType;
   status: UnitStatus;
@@ -19,6 +21,8 @@ export interface UnitProps {
 export class Unit {
   public readonly id: string;
   public readonly projectId: string;
+  public readonly buildingId: string | null;
+  public readonly typologyId: string;
   public readonly identifier: string;
   public readonly type: UnitType;
   public readonly status: UnitStatus;
@@ -32,6 +36,8 @@ export class Unit {
   constructor(props: UnitProps) {
     this.id = props.id;
     this.projectId = props.projectId;
+    this.buildingId = props.buildingId;
+    this.typologyId = props.typologyId;
     this.identifier = props.identifier;
     this.type = props.type;
     this.status = props.status;

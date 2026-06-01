@@ -6,11 +6,11 @@ import {
   IsObject,
   IsOptional,
   IsString,
+  IsUUID,
   MaxLength,
   Min,
 } from 'class-validator';
 import { UnitType } from '@domain/unit/value-objects/unit-type.vo';
-import { UnitAttributes } from '@domain/unit/value-objects/unit-attributes.vo';
 
 export class CreateUnitDto {
   @ApiProperty({ example: 'Apto 301' })
@@ -19,14 +19,40 @@ export class CreateUnitDto {
   @MaxLength(100)
   identifier: string;
 
-  @ApiProperty({ enum: UnitType, example: UnitType.APARTMENT })
-  @IsEnum(UnitType)
-  type: UnitType;
+  @ApiProperty({
+    description:
+      'Typology this unit belongs to. The unit inherits its type, base attributes, and base price from the typology.',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @IsUUID()
+  @IsNotEmpty()
+  typologyId: string;
 
-  @ApiProperty({ example: 125000 })
+  @ApiPropertyOptional({
+    enum: UnitType,
+    description:
+      'Optional. If provided, must match the typology unit type. If omitted, the typology unit type is used.',
+  })
+  @IsEnum(UnitType)
+  @IsOptional()
+  type?: UnitType;
+
+  @ApiPropertyOptional({
+    example: 125000,
+    description:
+      'Override of the typology base price. If omitted, the typology basePriceUsd is used (and is required to exist).',
+  })
   @IsNumber()
   @Min(0)
-  priceUSD: number;
+  @IsOptional()
+  priceUSD?: number;
+
+  @ApiPropertyOptional({
+    description: 'Building ID (required for VERTICAL projects)',
+  })
+  @IsUUID()
+  @IsOptional()
+  buildingId?: string | null;
 
   @ApiPropertyOptional({ example: 3.0, nullable: true })
   @IsNumber()
@@ -34,25 +60,17 @@ export class CreateUnitDto {
   @IsOptional()
   commissionPctOverride?: number | null;
 
-  @ApiProperty({
-    description: 'Discriminated union based on unit type',
+  @ApiPropertyOptional({
+    description:
+      'Partial overrides applied on top of the typology baseAttributes. Discriminator (type) is always set from the typology.',
     example: {
-      type: 'APARTMENT',
       floor: 3,
-      sqm: 85.5,
-      sqmUsable: 72.0,
-      bedrooms: 2,
-      bathrooms: 2,
-      halfBathrooms: 1,
       orientation: 'NORTH',
-      hasBalcony: true,
-      hasLaundryRoom: false,
-      hasServantRoom: false,
     },
   })
   @IsObject()
-  @IsNotEmpty()
-  attributes: UnitAttributes;
+  @IsOptional()
+  attributes?: Record<string, unknown>;
 
   @ApiPropertyOptional({ example: 'Corner unit with premium finishes' })
   @IsString()

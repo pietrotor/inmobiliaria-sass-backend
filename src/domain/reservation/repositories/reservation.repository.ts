@@ -3,6 +3,11 @@ import { PaginatedResult } from '@domain/common/interfaces/paginated-result.inte
 
 export const RESERVATION_REPOSITORY = 'RESERVATION_REPOSITORY';
 
+export interface ReservationFilters {
+  search?: string;
+  status?: string;
+}
+
 export interface CreateReservationData {
   unitIds: string[];
   clientName: string;
@@ -24,7 +29,12 @@ export interface CreateReservationData {
 export interface ReservationRepository {
   create(data: CreateReservationData): Promise<Reservation>;
   findById(id: string): Promise<Reservation | null>;
-  findByDeveloperId(developerId: string, limit: number, offset: number): Promise<PaginatedResult<Reservation>>;
+  findByDeveloperId(
+    developerId: string,
+    limit: number,
+    offset: number,
+    filters?: ReservationFilters,
+  ): Promise<PaginatedResult<Reservation>>;
   findByUnitId(unitId: string): Promise<Reservation[]>;
   findPendingAgreementDeadlines(): Promise<Reservation[]>;
   update(id: string, data: Partial<Reservation>): Promise<Reservation>;

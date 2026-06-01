@@ -18,6 +18,8 @@ import {
 } from '@domain/media/repositories/media.repository';
 import { ProjectStatus } from '@domain/project/value-objects/project-status.vo';
 import { ProjectVisibility } from '@domain/project/value-objects/project-visibility.vo';
+import { ProjectType } from '@domain/project/value-objects/project-type.vo';
+import { ConstructionPhase } from '@domain/project/value-objects/construction-phase.vo';
 import { CreateProjectDto } from '../dto/create-project.dto';
 import { enrichProjectWithMedia } from '../helpers/enrich-project.helper';
 import { DatabaseErrorHandler } from '@infrastructure/errors/database-error.handler';
@@ -52,13 +54,19 @@ export class CreateProjectUseCase {
         countryId: dto.countryId,
         cityId: dto.cityId,
         neighborhoodId: dto.neighborhoodId,
+        latitude: dto.latitude ?? null,
+        longitude: dto.longitude ?? null,
+        projectType: dto.projectType ?? ProjectType.VERTICAL,
         status: ProjectStatus.DRAFT,
         visibility: dto.visibility ?? ProjectVisibility.PUBLIC,
+        constructionPhase:
+          dto.constructionPhase ?? ConstructionPhase.PRE_LAUNCH,
         deliveryDate: dto.deliveryDate ? new Date(dto.deliveryDate) : null,
         totalFloors: dto.totalFloors ?? null,
-        totalUnits: dto.totalUnits,
+        totalUnits: 0,
         amenities: dto.amenities ?? [],
-        defaultCommissionPct: dto.defaultCommissionPct,
+        customAmenities: dto.customAmenities ?? [],
+        defaultCommissionPct: dto.defaultCommissionPct ?? 2.5,
         intentDeadlineHours: dto.intentDeadlineHours ?? 48,
       });
 

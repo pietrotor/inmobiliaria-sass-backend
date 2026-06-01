@@ -9,6 +9,8 @@ export class UnitMapper {
     return new Unit({
       id: schema.id,
       projectId: schema.projectId,
+      buildingId: schema.buildingId ?? null,
+      typologyId: schema.typologyId,
       identifier: schema.identifier,
       type: schema.type as UnitType,
       status: schema.status as UnitStatus,
@@ -19,20 +21,5 @@ export class UnitMapper {
       createdAt: schema.createdAt,
       updatedAt: schema.updatedAt,
     });
-  }
-
-  static toPersistence(
-    unit: Omit<Unit, 'id' | 'createdAt' | 'updatedAt'>,
-  ): Omit<UnitSchema, 'id' | 'createdAt' | 'updatedAt'> {
-    return {
-      projectId: unit.projectId,
-      identifier: unit.identifier,
-      type: unit.type,
-      status: unit.status,
-      priceUSD: unit.priceUSD,
-      commissionPctOverride: unit.commissionPctOverride,
-      attributes: unit.attributes,
-      internalNotes: unit.internalNotes,
-    };
   }
 }

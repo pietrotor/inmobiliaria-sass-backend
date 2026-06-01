@@ -48,6 +48,7 @@ import {
   MessageResponseDto,
 } from '@application/project/dto/project-response.dto';
 import { PaginationDto } from '@application/common/dto/pagination.dto';
+import { ProjectFilterDto } from '@application/project/dto/project-filter.dto';
 import { Auth, GetUser } from '@interface/http/common';
 import { UserRole } from '@domain/user/value-objects/role.vo';
 import { User } from '@domain/user/entities/user.entity';
@@ -108,10 +109,12 @@ export class ProjectsController {
     type: PaginatedProjectResponseDto,
   })
   @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
-  findAll(@GetUser() user: User, @Query() paginationDto: PaginationDto) {
+  findAll(@GetUser() user: User, @Query() filterDto: ProjectFilterDto) {
+    const { limit, offset, ...filters } = filterDto;
     return this.getProjectsUseCase.execute(
       user.organizationId,
-      paginationDto,
+      { limit, offset },
+      Object.keys(filters).length > 0 ? filters : undefined,
     );
   }
 

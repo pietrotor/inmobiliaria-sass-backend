@@ -11,6 +11,7 @@ import {
 export const entityTypeEnum = pgEnum('entity_type', [
   'PROJECT',
   'UNIT',
+  'TYPOLOGY',
   'DEVELOPER',
   'USER',
 ]);

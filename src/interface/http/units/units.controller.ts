@@ -32,6 +32,7 @@ import {
 } from '@nestjs/swagger';
 
 import { CreateUnitUseCase } from '@application/unit/use-cases/create-unit.use-case';
+import { BulkCreateUnitUseCase } from '@application/unit/use-cases/bulk-create-unit.use-case';
 import { GetUnitUseCase } from '@application/unit/use-cases/get-unit.use-case';
 import { GetUnitsByProjectUseCase } from '@application/unit/use-cases/get-units-by-project.use-case';
 import { UpdateUnitUseCase } from '@application/unit/use-cases/update-unit.use-case';
@@ -43,6 +44,7 @@ import { DeleteUnitMediaUseCase } from '@application/unit/use-cases/delete-unit-
 import { UpdateUnitPriceUseCase } from '@application/unit/use-cases/update-unit-price.use-case';
 
 import { CreateUnitDto } from '@application/unit/dto/create-unit.dto';
+import { BulkCreateUnitsDto } from '@application/unit/dto/bulk-create-units.dto';
 import { UpdateUnitDto } from '@application/unit/dto/update-unit.dto';
 import { UpdateUnitPriceDto } from '@application/unit/dto/update-unit-price.dto';
 import {
@@ -66,6 +68,7 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024;
 export class UnitsController {
   constructor(
     private readonly createUnitUseCase: CreateUnitUseCase,
+    private readonly bulkCreateUnitUseCase: BulkCreateUnitUseCase,
     private readonly getUnitUseCase: GetUnitUseCase,
     private readonly getUnitsByProjectUseCase: GetUnitsByProjectUseCase,
     private readonly updateUnitUseCase: UpdateUnitUseCase,
@@ -97,6 +100,35 @@ export class UnitsController {
     @Body() dto: CreateUnitDto,
   ) {
     return this.createUnitUseCase.execute(
+      user.organizationId,
+      projectId,
+      dto,
+    );
+  }
+
+  @Post('bulk')
+  @Auth(UserRole.DEVELOPER_ADMIN, UserRole.SUPER_ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Create multiple units in a project at once' })
+  @ApiParam({ name: 'projectId', type: String })
+  @ApiBody({ type: BulkCreateUnitsDto })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    schema: {
+      type: 'object',
+      properties: { created: { type: 'number', example: 105 } },
+    },
+  })
+  @ApiBadRequestResponse({ description: 'Invalid input data or duplicate identifiers' })
+  @ApiNotFoundResponse({ description: 'Project not found' })
+  @ApiForbiddenResponse({ description: 'You do not have access to this project' })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid authentication token' })
+  bulkCreate(
+    @GetUser() user: User,
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+    @Body() dto: BulkCreateUnitsDto,
+  ) {
+    return this.bulkCreateUnitUseCase.execute(
       user.organizationId,
       projectId,
       dto,

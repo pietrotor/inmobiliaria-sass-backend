@@ -10,6 +10,12 @@ export class UnitResponseDto {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440001' })
   projectId: string;
 
+  @ApiPropertyOptional({ nullable: true })
+  buildingId: string | null;
+
+  @ApiPropertyOptional({ nullable: true })
+  typologyId: string | null;
+
   @ApiProperty({ example: 'Apto 301' })
   identifier: string;
 
@@ -35,9 +41,7 @@ export class UnitResponseDto {
       bathrooms: 2,
       halfBathrooms: 1,
       orientation: 'NORTH',
-      hasBalcony: true,
-      hasLaundryRoom: false,
-      hasServantRoom: false,
+      customTags: ['Balcón', 'Vestidor', 'Suite master', 'Jacuzzi privado', 'Vista panorámica'],
     },
   })
   attributes: Record<string, unknown>;

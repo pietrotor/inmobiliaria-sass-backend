@@ -18,15 +18,37 @@ const SINGULAR_ROLES: MediaRole[] = [
   MediaRole.AVATAR,
 ];
 
-const IMAGE_MIMES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-const VIDEO_MIMES = ['video/mp4', 'video/webm', 'video/quicktime'];
-const DOCUMENT_MIMES = ['application/pdf'];
+/**
+ * MIME types blocked for safety. Executables and shell scripts are rejected
+ * regardless of the role to avoid serving malware from public S3 URLs.
+ */
+const BLOCKED_MIMES = new Set<string>([
+  'application/x-msdownload',
+  'application/x-executable',
+  'application/x-dosexec',
+  'application/x-msdos-program',
+  'application/x-sh',
+  'application/x-shellscript',
+  'application/x-bat',
+  'application/bat',
+  'application/x-msi',
+]);
 
+/**
+ * Classifies a MIME type into one of the three coarse `MediaType` buckets used
+ * for UI grouping. Anything that is not image/* or video/* falls into
+ * DOCUMENT, which is intentional: developers should be able to upload plans,
+ * brochures, technical specs, CAD files, archives, etc.
+ */
 function resolveMediaType(mimeType: string): MediaType {
-  if (IMAGE_MIMES.includes(mimeType)) return MediaType.IMAGE;
-  if (VIDEO_MIMES.includes(mimeType)) return MediaType.VIDEO;
-  if (DOCUMENT_MIMES.includes(mimeType)) return MediaType.DOCUMENT;
-  throw new BadRequestException(`Unsupported file type: ${mimeType}`);
+  if (BLOCKED_MIMES.has(mimeType)) {
+    throw new BadRequestException(
+      `File type '${mimeType}' is not allowed for security reasons`,
+    );
+  }
+  if (mimeType.startsWith('image/')) return MediaType.IMAGE;
+  if (mimeType.startsWith('video/')) return MediaType.VIDEO;
+  return MediaType.DOCUMENT;
 }
 
 @Injectable()

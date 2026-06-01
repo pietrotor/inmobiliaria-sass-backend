@@ -1,9 +1,10 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
 
 import { UnitsController } from './units.controller';
 
 import { CreateUnitUseCase } from '@application/unit/use-cases/create-unit.use-case';
+import { BulkCreateUnitUseCase } from '@application/unit/use-cases/bulk-create-unit.use-case';
 import { GetUnitUseCase } from '@application/unit/use-cases/get-unit.use-case';
 import { GetUnitsByProjectUseCase } from '@application/unit/use-cases/get-units-by-project.use-case';
 import { UpdateUnitUseCase } from '@application/unit/use-cases/update-unit.use-case';
@@ -25,6 +26,8 @@ import { UsersModule } from '../users/users.module';
 import { DevelopersModule } from '../developers/developers.module';
 import { ProjectsModule } from '../projects/projects.module';
 import { MediaModule } from '../media/media.module';
+import { BuildingsModule } from '../buildings/buildings.module';
+import { UnitTypologiesModule } from '../unit-typologies/unit-typologies.module';
 
 @Module({
   imports: [
@@ -34,10 +37,13 @@ import { MediaModule } from '../media/media.module';
     DevelopersModule,
     ProjectsModule,
     MediaModule,
+    forwardRef(() => BuildingsModule),
+    UnitTypologiesModule,
   ],
   controllers: [UnitsController],
   providers: [
     CreateUnitUseCase,
+    BulkCreateUnitUseCase,
     GetUnitUseCase,
     GetUnitsByProjectUseCase,
     UpdateUnitUseCase,

@@ -21,7 +21,7 @@ import { CreatePostSaleRequestUseCase } from '@application/post-sale/use-cases/c
 import { UpdatePostSaleStatusUseCase } from '@application/post-sale/use-cases/update-post-sale-status.use-case';
 import { GetPostSaleRequestsUseCase } from '@application/post-sale/use-cases/get-post-sale-requests.use-case';
 import { CreatePostSaleRequestDto } from '@application/post-sale/dto/create-post-sale-request.dto';
-import { PaginationDto } from '@application/common/dto/pagination.dto';
+import { PostSaleFilterDto } from '@application/post-sale/dto/post-sale-filter.dto';
 import { PostSaleRequestStatus } from '@domain/post-sale/value-objects/request-status.vo';
 
 import { Auth, GetUser } from '@interface/http/common';
@@ -53,12 +53,14 @@ export class PostSaleController {
   @ApiParam({ name: 'unitId', type: String })
   getByUnit(
     @Param('unitId', ParseUUIDPipe) unitId: string,
-    @Query() pagination: PaginationDto,
+    @Query() filterDto: PostSaleFilterDto,
   ) {
+    const { limit, offset, ...filters } = filterDto;
     return this.getPostSaleRequestsUseCase.execute(
       unitId,
-      pagination.limit,
-      pagination.offset,
+      limit,
+      offset,
+      Object.keys(filters).length > 0 ? filters : undefined,
     );
   }
 

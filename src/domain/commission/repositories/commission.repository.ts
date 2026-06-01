@@ -13,10 +13,24 @@ export interface CreateCommissionData {
   status: string;
 }
 
+export interface CommissionFilters {
+  status?: string;
+}
+
 export interface CommissionRepository {
   create(data: CreateCommissionData): Promise<Commission>;
   findById(id: string): Promise<Commission | null>;
-  findByBrokerId(brokerId: string, limit: number, offset: number): Promise<PaginatedResult<Commission>>;
-  findByDeveloperId(developerId: string, limit: number, offset: number): Promise<PaginatedResult<Commission>>;
+  findByBrokerId(
+    brokerId: string,
+    limit: number,
+    offset: number,
+    filters?: CommissionFilters,
+  ): Promise<PaginatedResult<Commission>>;
+  findByDeveloperId(
+    developerId: string,
+    limit: number,
+    offset: number,
+    filters?: CommissionFilters,
+  ): Promise<PaginatedResult<Commission>>;
   update(id: string, data: Partial<Commission>): Promise<Commission>;
 }

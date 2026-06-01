@@ -11,6 +11,8 @@ import { DevelopersModule } from '../developers/developers.module';
 import { ProjectsModule } from '../projects/projects.module';
 import { UnitsModule } from '../units/units.module';
 import { MediaModule } from '../media/media.module';
+import { BuildingsModule } from '../buildings/buildings.module';
+import { UnitTypologiesModule } from '../unit-typologies/unit-typologies.module';
 import { DrizzleModule } from '@infrastructure/persistence/drizzle/drizzle.module';
 
 @Module({
@@ -23,6 +25,8 @@ import { DrizzleModule } from '@infrastructure/persistence/drizzle/drizzle.modul
     ProjectsModule,
     UnitsModule,
     MediaModule,
+    BuildingsModule,
+    UnitTypologiesModule,
   ],
   controllers: [SeedController],
   providers: [SeedUsersUseCase],

@@ -20,6 +20,7 @@ export interface LeadFilters {
   status?: string;
   assignedExecutiveId?: string;
   nationalId?: string;
+  search?: string;
 }
 
 export interface LeadRepository {

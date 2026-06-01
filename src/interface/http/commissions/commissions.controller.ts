@@ -17,7 +17,7 @@ import {
 import { GetCommissionsUseCase } from '@application/commission/use-cases/get-commissions.use-case';
 import { MarkCommissionPaidUseCase } from '@application/commission/use-cases/mark-commission-paid.use-case';
 import { DisputeCommissionUseCase } from '@application/commission/use-cases/dispute-commission.use-case';
-import { PaginationDto } from '@application/common/dto/pagination.dto';
+import { CommissionFilterDto } from '@application/commission/dto/commission-filter.dto';
 
 import { Auth, GetUser } from '@interface/http/common';
 import { UserRole } from '@domain/user/value-objects/role.vo';
@@ -38,13 +38,15 @@ export class CommissionsController {
   @ApiOperation({
     summary: 'Get commissions (broker sees own, developer sees all)',
   })
-  getAll(@GetUser() user: User, @Query() pagination: PaginationDto) {
+  getAll(@GetUser() user: User, @Query() filterDto: CommissionFilterDto) {
+    const { limit, offset, ...filters } = filterDto;
     return this.getCommissionsUseCase.execute(
       user.id,
       user.role,
       user.organizationId,
-      pagination.limit,
-      pagination.offset,
+      limit,
+      offset,
+      Object.keys(filters).length > 0 ? filters : undefined,
     );
   }
 

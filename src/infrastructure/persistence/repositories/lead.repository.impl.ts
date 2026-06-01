@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { eq, and, desc, count } from 'drizzle-orm';
+import { eq, and, desc, count, ilike, or } from 'drizzle-orm';
 
 import { Lead } from '@domain/lead/entities/lead.entity';
 import {
@@ -61,6 +61,12 @@ export class DrizzleLeadRepository implements LeadRepository {
     }
     if (filters?.nationalId) {
       conditions.push(eq(leads.nationalId, filters.nationalId));
+    }
+    if (filters?.search) {
+      const pattern = `%${filters.search}%`;
+      conditions.push(
+        or(ilike(leads.fullName, pattern), ilike(leads.phone, pattern)),
+      );
     }
 
     const where = and(...conditions);

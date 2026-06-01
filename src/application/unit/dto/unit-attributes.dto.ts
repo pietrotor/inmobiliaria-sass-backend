@@ -1,5 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  ArrayMaxSize,
+  IsArray,
   IsBoolean,
   IsEnum,
   IsInt,
@@ -7,11 +9,9 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  MaxLength,
   Min,
-  ValidateIf,
 } from 'class-validator';
-import { Type } from 'class-transformer';
-import { UnitType } from '@domain/unit/value-objects/unit-type.vo';
 import { Orientation } from '@domain/unit/value-objects/orientation.vo';
 
 export class HabitableUnitAttributesDto {
@@ -58,17 +58,18 @@ export class HabitableUnitAttributesDto {
   @IsOptional()
   orientation?: Orientation | null;
 
-  @ApiProperty({ example: true })
-  @IsBoolean()
-  hasBalcony: boolean;
-
-  @ApiProperty({ example: false })
-  @IsBoolean()
-  hasLaundryRoom: boolean;
-
-  @ApiProperty({ example: false })
-  @IsBoolean()
-  hasServantRoom: boolean;
+  @ApiPropertyOptional({
+    type: [String],
+    example: ['Balcón', 'Parrillero', 'Dormitorio con suite', 'Vista panorámica'],
+    description:
+      'Free-form features. There is no fixed catalog — anything that describes the unit (amenities, finishes, perks) goes here as a short label.',
+  })
+  @IsArray()
+  @IsString({ each: true })
+  @MaxLength(80, { each: true })
+  @ArrayMaxSize(20)
+  @IsOptional()
+  customTags?: string[];
 }
 
 export class ParkingAttributesDto {
@@ -95,6 +96,14 @@ export class ParkingAttributesDto {
   @Min(0)
   @IsOptional()
   sqm?: number | null;
+
+  @ApiPropertyOptional({ type: [String], example: ['Cerca del ascensor'] })
+  @IsArray()
+  @IsString({ each: true })
+  @MaxLength(80, { each: true })
+  @ArrayMaxSize(20)
+  @IsOptional()
+  customTags?: string[];
 }
 
 export class StorageAttributesDto {
@@ -112,4 +121,12 @@ export class StorageAttributesDto {
   @Min(0)
   @IsOptional()
   sqm?: number | null;
+
+  @ApiPropertyOptional({ type: [String], example: ['Climatizado'] })
+  @IsArray()
+  @IsString({ each: true })
+  @MaxLength(80, { each: true })
+  @ArrayMaxSize(20)
+  @IsOptional()
+  customTags?: string[];
 }

@@ -7,6 +7,7 @@ import {
 import {
   COMMISSION_REPOSITORY,
   CommissionRepository,
+  CommissionFilters,
 } from '@domain/commission/repositories/commission.repository';
 import {
   DEVELOPER_REPOSITORY,
@@ -35,6 +36,7 @@ export class GetCommissionsUseCase {
     organizationId: string,
     limit: number,
     offset: number,
+    filters?: CommissionFilters,
   ) {
     try {
       if (role === 'BROKER') {
@@ -44,6 +46,7 @@ export class GetCommissionsUseCase {
           broker.id,
           limit,
           offset,
+          filters,
         );
       }
 
@@ -54,6 +57,7 @@ export class GetCommissionsUseCase {
         developer.id,
         limit,
         offset,
+        filters,
       );
     } catch (error) {
       if (error instanceof HttpException) throw error;
